@@ -1,0 +1,4 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Keep kitty itself unmodified; this desktop identity belongs to Astro.
+exec kitty --class=astro --name=astro --title=Astro "$@"

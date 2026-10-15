@@ -1,11 +1,42 @@
 # Astro
 
+![Astro — quiet company, sharp tools](assets/astro-logo.svg)
+
 Astro turns [kitty](https://sw.kovidgoyal.net/kitty/) into a workspace for
 agent CLIs such as Claude Code, Codex and Hermes. It is not a fork of kitty's
 source code: it is a configuration plus a title-bar extension that runs inside
 an unmodified kitty.
 
 ## Features
+
+**Meet Astro**
+
+The mascot is based on Astro, a real long-haired brown/grey tabby: tufted ears,
+a dark forehead M, pale green eyes, a pink nose and a cream muzzle and bib.
+The app icon and outlined wordmark share the terminal's existing Gruvbox palette.
+Reference photographs are personal and are not distributed in this repository.
+
+New Bash terminal panes greet you with a short CPU-only ASCII animation:
+First contact, Tabby rain, Constellation, Orbital cat, Cat nap, Zoomies,
+Purr waves, Yarn physics, Whisker radar or Stardust. A persistent shuffle bag
+shows all ten before repeating, including when several panes open together.
+The greeting lasts at most
+1.25 seconds, disappears without adding scrollback, and stops as soon as you
+type; your input is left in the terminal queue for the shell. Descendant Bash
+shells skip the greeting in the same pane. Direct non-shell command launches,
+tiny panes, redirected output and `TERM=dumb` skip it too. Bash remains the
+normal login shell, preserving kitty's native shell integration.
+
+```sh
+# Disable greetings for terminals started from this environment.
+export ASTRO_ANIMATION=off
+# Alternatively set `env ASTRO_ANIMATION=off` in kitty.conf.
+# REDUCE_MOTION=1 also disables them; NO_COLOR disables their colors.
+
+# List or preview a specific effect (1–10).
+python3 ~/.config/kitty/astro_intro.py --list
+python3 ~/.config/kitty/astro_intro.py --effect 6 --duration 3
+```
 
 **Pane controls in every title bar**
 
@@ -71,6 +102,8 @@ kitty +runpy 'import unittest; r = unittest.TextTestRunner(verbosity=2).run(unit
 
 ## Requirements
 
+- Python **3.10+** and Bash for the optional startup greetings; the renderer
+  uses only the standard library and does not use the GPU.
 - kitty **0.49.2**. The title-bar mouse handler, `Window._title_bar_screen`
   and the splits layout internals are not public APIs; check Astro after every
   kitty upgrade.
@@ -88,9 +121,27 @@ cd astro
 ```
 
 The installer copies `config/` into `~/.config/kitty` (or
-`$KITTY_CONFIG_DIRECTORY`), moves replaced files into a timestamped backup
-folder and installs the icon font into `~/.local/share/fonts`. Restart kitty
-afterwards.
+`$KITTY_CONFIG_DIRECTORY`), backs up replaced files, installs the icon font,
+Astro's desktop entry, application icons and `~/.local/bin/astro`. It adds one
+managed, Kitty-only source block to `~/.bashrc` (backed up first); it does not
+change your shell, prompt, aliases or other terminal emulators. For a staged
+install, set `KITTY_CONFIG_DIRECTORY`, `XDG_DATA_HOME`, `ASTRO_BIN_DIRECTORY`
+and `ASTRO_BASHRC` to staging paths.
+
+Open **Astro** from the application launcher, or run `astro`. New Kitty
+processes use `kitty.app.png` as their window icon. Existing processes may
+need a restart before their icon changes; no running sessions are closed by
+the installer.
+
+## Brand assets
+
+`assets/astro.svg` is the app-icon source; `assets/astro-logo.svg` is the
+self-contained wordmark. PNGs are supplied at 32, 64, 128, 256 and 512 pixels.
+Rebuild them with the system Python and PyGObject, Rsvg and Cairo installed:
+
+```sh
+/usr/bin/python3 tools/build_brand.py
+```
 
 ## Icon font
 

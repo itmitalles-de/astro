@@ -1,0 +1,20 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Astro
+GenericName=Terminal workspace
+GenericName[de]=Terminal-Arbeitsplatz
+Comment=Quiet company. Sharp tools. A terminal workspace for agent CLIs.
+Comment[de]=Dein Kater im Terminal. Ein Arbeitsplatz für Agent-CLIs.
+TryExec=kitty
+Exec=kitty --class=astro --name=astro --title=Astro
+Icon=astro
+StartupWMClass=astro
+StartupNotify=true
+Categories=System;TerminalEmulator;
+Keywords=terminal;kitty;agents;cat;
+X-TerminalArgExec=--
+X-TerminalArgTitle=--title
+X-TerminalArgAppId=--class
+X-TerminalArgDir=--working-directory
+X-TerminalArgHold=--hold
