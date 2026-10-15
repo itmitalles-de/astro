@@ -6,8 +6,8 @@ GenericName=Terminal workspace
 GenericName[de]=Terminal-Arbeitsplatz
 Comment=Quiet company. Sharp tools. A terminal workspace for agent CLIs.
 Comment[de]=Dein Kater im Terminal. Ein Arbeitsplatz für Agent-CLIs.
-TryExec=kitty
-Exec=kitty --class=astro --name=astro --title=Astro
+TryExec=astro
+Exec=astro
 Icon=astro
 StartupWMClass=astro
 StartupNotify=true

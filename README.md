@@ -128,8 +128,11 @@ change your shell, prompt, aliases or other terminal emulators. For a staged
 install, set `KITTY_CONFIG_DIRECTORY`, `XDG_DATA_HOME`, `ASTRO_BIN_DIRECTORY`
 and `ASTRO_BASHRC` to staging paths.
 
-Open **Astro** from the application launcher, or run `astro`. New Kitty
-processes use `kitty.app.png` as their window icon. Existing processes may
+Open **Astro** from the application launcher, or run `astro`. At each app
+start, the launcher copies the literal `/resume` (without a newline) into the
+clipboard and primary selection. Opening another pane or tab does not overwrite
+the clipboard again. Clipboard failure never prevents the terminal from opening.
+New Kitty processes use `kitty.app.png` as their window icon. Existing processes may
 need a restart before their icon changes; no running sessions are closed by
 the installer.
 

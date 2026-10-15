@@ -1,4 +1,17 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Keep kitty itself unmodified; this desktop identity belongs to Astro.
+# Seed both selections once per app start, never on each tab/pane or prompt.
+# Missing clipboard tools/compositor must not prevent the terminal from opening.
+if [ -n "${WAYLAND_DISPLAY-}" ]; then
+    if command -v clipboard-copy >/dev/null 2>&1; then
+        printf '%s' '/resume' | clipboard-copy >/dev/null 2>&1 || :
+    elif command -v wl-copy >/dev/null 2>&1; then
+        printf '%s' '/resume' | wl-copy --type text/plain;charset=utf-8 >/dev/null 2>&1 || :
+        printf '%s' '/resume' | wl-copy --primary --type text/plain;charset=utf-8 >/dev/null 2>&1 || :
+    fi
+elif command -v xclip >/dev/null 2>&1; then
+    printf '%s' '/resume' | xclip -selection clipboard >/dev/null 2>&1 || :
+    printf '%s' '/resume' | xclip -selection primary >/dev/null 2>&1 || :
+fi
 exec kitty --class=astro --name=astro --title=Astro "$@"
