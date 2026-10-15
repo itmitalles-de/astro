@@ -11,8 +11,12 @@ an unmodified kitty.
 
 **Meet Astro**
 
-The mascot is based on Astro, a real long-haired brown/grey tabby: tufted ears,
-a dark forehead M, pale green eyes, a pink nose and a cream muzzle and bib.
+The mascot is based on Astro, a real long-haired brown/grey tabby: tall ears,
+a dark forehead M, a pink nose and a cream ruff. In the owner's front-facing
+reference, the missing/closed eye is on the viewer's left and the single open
+pale green eye is on the viewer's right. The icon and both ASCII cat poses keep
+that exact orientation; do not mirror them. The simplified icon uses eight bold
+shapes rather than detailed whiskers, cheek stripes or decorative marks.
 The app icon and outlined wordmark share the terminal's existing Gruvbox palette.
 Reference photographs are personal and are not distributed in this repository.
 
