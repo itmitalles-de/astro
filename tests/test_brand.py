@@ -18,6 +18,11 @@ class BrandTests(unittest.TestCase):
         self.assertLessEqual(float(window.get('rx','999')), 20, 'corners must only be slightly rounded')
         self.assertIsNotNone(svg.find(".//*[@id='terminal-titlebar']"))
         self.assertIsNotNone(svg.find(".//*[@id='terminal-prompt']"))
+        head = svg.find(".//*[@id='cat-head']")
+        self.assertIsNotNone(head, 'position the entire cat head as one group')
+        assert head is not None
+        self.assertEqual(head.get('transform'), 'translate(0 24)')
+        self.assertIsNotNone(head.find(".//*[@id='eye-open-viewer-right']"))
         opened = svg.find(".//*[@id='eye-open-viewer-right']")
         closed = svg.find(".//*[@id='eye-closed-viewer-left']")
         self.assertIsNotNone(opened, 'open eye must be on the reference image-right')

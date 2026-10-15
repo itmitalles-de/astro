@@ -17,7 +17,7 @@ def build_logo():
     for child in source:
         if child.tag.rsplit('}', 1)[-1] not in ('title', 'desc'):
             icon.append(child)
-    word = ET.SubElement(logo, f'{{{SVG}}}g', {'transform': 'translate(326 76)', 'fill': 'none', 'stroke': '#d8d4ce', 'stroke-width': '11', 'stroke-linecap': 'square', 'stroke-linejoin': 'round'})
+    word = ET.SubElement(logo, f'{{{SVG}}}g', {'transform': 'translate(326 76)', 'fill': 'none', 'stroke': '#d0cfcc', 'stroke-width': '11', 'stroke-linecap': 'square', 'stroke-linejoin': 'round'})
     letters = [
         'M0 100 30 0 60 100M12 64H48',
         'M60 4H16Q0 4 0 20V31Q0 46 16 49L44 54Q60 57 60 72V83Q60 100 44 100H0',
@@ -27,8 +27,8 @@ def build_logo():
     ]
     for i, letter in enumerate(letters):
         ET.SubElement(word, f'{{{SVG}}}path', d=letter, transform=f'translate({i*134} 0)')
-    ET.SubElement(logo, f'{{{SVG}}}path', {'d': 'M326 217h70', 'stroke': '#63a8f8', 'stroke-width': '5'})
-    text = ET.SubElement(logo, f'{{{SVG}}}text', {'x': '421', 'y': '223', 'fill': '#99968f', 'font-family': 'monospace', 'font-size': '17', 'letter-spacing': '2'})
+    ET.SubElement(logo, f'{{{SVG}}}path', {'d': 'M326 217h70', 'stroke': '#2a7bde', 'stroke-width': '5'})
+    text = ET.SubElement(logo, f'{{{SVG}}}text', {'x': '421', 'y': '223', 'fill': '#5e5c64', 'font-family': 'monospace', 'font-size': '17', 'letter-spacing': '2'})
     text.text = 'QUIET COMPANY. SHARP TOOLS.'
     ET.indent(logo, space='  ')
     ET.ElementTree(logo).write(ROOT / 'assets/astro-logo.svg', encoding='unicode', xml_declaration=False)

@@ -147,9 +147,9 @@ def frame(effect: int, t: float, width: int = 64, height: int = 24) -> list[str]
     return [''.join(row) for row in grid]
 
 
-# Paper/blue chrome follows the terminal; the cat retains its fur and eye colors.
-COLORS = {'fur': '189;165;133', 'cream': '216;212;206', 'eye': '184;187;106',
-          'nose': '211;134;155', 'dim': '153;150;143', 'sky': '99;168;248'}
+# GNOME text/accents follow the terminal; the cat retains its fur and eye colors.
+COLORS = {'fur': '189;165;133', 'cream': '208;207;204', 'eye': '184;187;106',
+          'nose': '211;134;155', 'dim': '94;92;100', 'sky': '42;123;222'}
 
 
 def ansi_frame(rows: list[str], colors: bool = True) -> str:

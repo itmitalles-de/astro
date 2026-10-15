@@ -1,25 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1040" height="280" viewBox="0 0 1040 280" role="img">
   <title>Astro — quiet company, sharp tools</title>
   <g transform="translate(12 12) scale(.5)">
-    <rect id="terminal-window" x="3" y="3" width="506" height="506" rx="16" fill="#191919" stroke="#393939" stroke-width="6" />
-    <path id="terminal-titlebar" d="M19 6H493Q506 6 506 19V58H6V19Q6 6 19 6Z" fill="#242426" />
-    <path id="terminal-divider" d="M6 58H506" fill="none" stroke="#393939" stroke-width="2" />
-    <path id="terminal-prompt" d="m24 20 12 9-12 9m26 0h15" fill="none" stroke="#d8d4ce" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-    <path id="silhouette" d="M112 228 104 84 192 144Q256 124 320 144L408 84 400 228Q430 296 386 352L350 348 323 398 288 390 256 426 224 390 189 398 162 348 126 352Q82 296 112 228Z" fill="#bdae93" />
-    <path id="cream-ruff" d="M180 282Q210 263 256 285 302 263 332 282L335 322Q317 347 300 354L306 372 280 366 256 398 232 366 206 372 212 354Q195 347 177 322Z" fill="#d8d4ce" />
-    <path id="tabby-m" d="m216 185 8-25 32 23 32-23 8 25" fill="none" stroke="#504945" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
-    <path id="eye-closed-viewer-left" d="m169 239 34-5" fill="none" stroke="#504945" stroke-width="10" stroke-linecap="round" />
-    <path id="eye-open-viewer-right" d="M287 231Q315 210 343 231 315 261 287 231Z" fill="#bfc78c" stroke="#191919" stroke-width="7" stroke-linejoin="round" />
-    <path id="pupil-viewer-right" d="M315 222v21" fill="none" stroke="#191919" stroke-width="9" stroke-linecap="round" />
-    <path id="pink-nose" d="M244 280Q256 274 268 280L256 293Z" fill="#d3869b" />
+    <rect id="terminal-window" x="3" y="3" width="506" height="506" rx="16" fill="#171421" stroke="#5e5c64" stroke-width="6" />
+    <path id="terminal-titlebar" d="M19 6H493Q506 6 506 19V58H6V19Q6 6 19 6Z" fill="#171421" />
+    <path id="terminal-divider" d="M6 58H506" fill="none" stroke="#5e5c64" stroke-width="2" />
+    <path id="terminal-prompt" d="m24 20 12 9-12 9m26 0h15" fill="none" stroke="#d0cfcc" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    <g id="cat-head" transform="translate(0 24)">
+      <path id="silhouette" d="M112 228 104 84 192 144Q256 124 320 144L408 84 400 228Q430 296 386 352L350 348 323 398 288 390 256 426 224 390 189 398 162 348 126 352Q82 296 112 228Z" fill="#bdae93" />
+      <path id="cream-ruff" d="M180 282Q210 263 256 285 302 263 332 282L335 322Q317 347 300 354L306 372 280 366 256 398 232 366 206 372 212 354Q195 347 177 322Z" fill="#d8d4ce" />
+      <path id="tabby-m" d="m216 185 8-25 32 23 32-23 8 25" fill="none" stroke="#504945" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+      <path id="eye-closed-viewer-left" d="m169 239 34-5" fill="none" stroke="#504945" stroke-width="10" stroke-linecap="round" />
+      <path id="eye-open-viewer-right" d="M287 231Q315 210 343 231 315 261 287 231Z" fill="#bfc78c" stroke="#191919" stroke-width="7" stroke-linejoin="round" />
+      <path id="pupil-viewer-right" d="M315 222v21" fill="none" stroke="#191919" stroke-width="9" stroke-linecap="round" />
+      <path id="pink-nose" d="M244 280Q256 274 268 280L256 293Z" fill="#d3869b" />
+    </g>
   </g>
-  <g transform="translate(326 76)" fill="none" stroke="#d8d4ce" stroke-width="11" stroke-linecap="square" stroke-linejoin="round">
+  <g transform="translate(326 76)" fill="none" stroke="#d0cfcc" stroke-width="11" stroke-linecap="square" stroke-linejoin="round">
     <path d="M0 100 30 0 60 100M12 64H48" transform="translate(0 0)" />
     <path d="M60 4H16Q0 4 0 20V31Q0 46 16 49L44 54Q60 57 60 72V83Q60 100 44 100H0" transform="translate(134 0)" />
     <path d="M0 0H60M30 0V100" transform="translate(268 0)" />
     <path d="M0 100V0H38Q60 0 60 22V28Q60 50 38 50H0M34 50 66 100" transform="translate(402 0)" />
     <path d="M16 0H44Q60 0 60 16V84Q60 100 44 100H16Q0 100 0 84V16Q0 0 16 0" transform="translate(536 0)" />
   </g>
-  <path d="M326 217h70" stroke="#63a8f8" stroke-width="5" />
-  <text x="421" y="223" fill="#99968f" font-family="monospace" font-size="17" letter-spacing="2">QUIET COMPANY. SHARP TOOLS.</text>
+  <path d="M326 217h70" stroke="#2a7bde" stroke-width="5" />
+  <text x="421" y="223" fill="#5e5c64" font-family="monospace" font-size="17" letter-spacing="2">QUIET COMPANY. SHARP TOOLS.</text>
 </svg>

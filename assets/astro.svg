@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Astro</title>
-  <desc id="desc">A minimal long-haired tabby in a dark terminal window with slightly rounded corners and a prompt in its title bar. As in the supplied front-facing reference, the closed missing-eye mark is on the viewer's left; the only open green eye is on the viewer's right. Do not mirror.</desc>
-  <rect id="terminal-window" x="3" y="3" width="506" height="506" rx="16" fill="#191919" stroke="#393939" stroke-width="6"/>
-  <path id="terminal-titlebar" d="M19 6H493Q506 6 506 19V58H6V19Q6 6 19 6Z" fill="#242426"/>
-  <path id="terminal-divider" d="M6 58H506" fill="none" stroke="#393939" stroke-width="2"/>
-  <path id="terminal-prompt" d="m24 20 12 9-12 9m26 0h15" fill="none" stroke="#d8d4ce" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <desc id="desc">A minimal long-haired tabby sitting slightly lower beneath the title bar of a GNOME-colored dark terminal window with slightly rounded corners. As in the supplied front-facing reference, the closed missing-eye mark is on the viewer's left; the only open green eye is on the viewer's right. Do not mirror.</desc>
+  <rect id="terminal-window" x="3" y="3" width="506" height="506" rx="16" fill="#171421" stroke="#5e5c64" stroke-width="6"/>
+  <path id="terminal-titlebar" d="M19 6H493Q506 6 506 19V58H6V19Q6 6 19 6Z" fill="#171421"/>
+  <path id="terminal-divider" d="M6 58H506" fill="none" stroke="#5e5c64" stroke-width="2"/>
+  <path id="terminal-prompt" d="m24 20 12 9-12 9m26 0h15" fill="none" stroke="#d0cfcc" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g id="cat-head" transform="translate(0 24)">
   <path id="silhouette" d="M112 228 104 84 192 144Q256 124 320 144L408 84 400 228Q430 296 386 352L350 348 323 398 288 390 256 426 224 390 189 398 162 348 126 352Q82 296 112 228Z" fill="#bdae93"/>
   <path id="cream-ruff" d="M180 282Q210 263 256 285 302 263 332 282L335 322Q317 347 300 354L306 372 280 366 256 398 232 366 206 372 212 354Q195 347 177 322Z" fill="#d8d4ce"/>
   <path id="tabby-m" d="m216 185 8-25 32 23 32-23 8 25" fill="none" stroke="#504945" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
@@ -12,4 +13,5 @@
   <path id="eye-open-viewer-right" d="M287 231Q315 210 343 231 315 261 287 231Z" fill="#bfc78c" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
   <path id="pupil-viewer-right" d="M315 222v21" fill="none" stroke="#191919" stroke-width="9" stroke-linecap="round"/>
   <path id="pink-nose" d="M244 280Q256 274 268 280L256 293Z" fill="#d3869b"/>
+  </g>
 </svg>

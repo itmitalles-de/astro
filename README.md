@@ -18,8 +18,9 @@ pale green eye is on the viewer's right. The icon and both ASCII cat poses keep
 that exact orientation; do not mirror them. The cat stays minimal, without
 detailed whiskers or cheek stripes. Its background is a terminal window with
 only slightly rounded corners (16px radius on a 512px canvas), a title bar and
-a small prompt. Paper text and blue accents connect the icon and wordmark to
-the Codex-style terminal chrome; the cat retains its natural fur and eye colors.
+a small prompt. The entire cat head sits 24 SVG units lower beneath the title
+bar. GNOME palette colors connect the frame and wordmark to the terminal;
+the cat retains its natural fur and eye colors.
 Reference photographs are personal and are not distributed in this repository.
 
 New Bash terminal panes greet you with a short CPU-only ASCII animation:
@@ -46,11 +47,9 @@ python3 ~/.config/kitty/astro_intro.py --effect 6 --duration 3
 
 **Astro Bash prompt**
 
-The familiar `user@host:path$` layout uses Paper (`#d8d4ce`) for the username,
-hostname and directory, muted separators (`#99968f`) and a Codex-blue prompt
-symbol (`#63a8f8`). The Paper tone is sampled from the owner's Codex reference;
-blue matches Codex 0.162.1's documented `UI_ACCENT` / `CHATGPT_BLUE_200` in
-[`style.rs`](https://github.com/openai/codex/blob/rust-v0.162.1/codex-rs/tui/src/style.rs).
+The familiar `user@host:path$` layout uses GNOME ANSI white for the username,
+hostname and directory, muted separators and a bright-blue prompt symbol.
+ANSI palette references replace the former custom RGB prompt colors.
 This is scoped to interactive Kitty Bash sessions; other terminals
 are unchanged. Readline wrapping and kitty's native shell integration remain
 intact. Set `ASTRO_PROMPT=off` to keep your existing prompt; `NO_COLOR` or a dumb
@@ -87,7 +86,7 @@ source ~/.config/kitty/astro_prompt.bash
 
 **Agent-aware panes**
 
-- Panes running `claude`, `codex` or `hermes` get a neutral Paper badge
+- Panes running `claude`, `codex` or `hermes` get a neutral GNOME-colored badge
   (✻ Claude, ›_ Codex, ☤ Hermes). Codex session ids give way to the working
   directory.
 - A red dot marks a pane whose program rang the bell (an agent finished or
@@ -97,9 +96,11 @@ source ~/.config/kitty/astro_prompt.bash
 
 - Splits layout with proportional sizing, a 3 × 3 agent workspace session
   (`config/sessions/default.conf`) plus a monitor column.
-- Codex-style Paper foreground, neutral title bars and blue active borders;
-  semantic ANSI red/green/status colors stay intact (Codex inherits these
-  from the terminal too). Rounded tabs (shown from two tabs on), dimmed inactive panes,
+- The 16 ANSI colors precisely match GNOME Terminal 3.58.0's built-in GNOME
+  palette, recorded from its GSettings schema defaults in
+  `tests/fixtures/gnome-palette.json`. Dark background `#171421`, default text
+  `#d0cfcc` and blue accent `#2a7bde` use that palette too; no GNOME desktop
+  theme switching is implied. Rounded tabs (shown from two tabs on), dimmed inactive panes,
   beam cursor with a short trail, hover-only link underlines.
 - Desktop notification when a long shell command finishes in an unfocused
   pane; trailing spaces are stripped when copying from TUIs.
