@@ -21,9 +21,11 @@ class PromptTests(unittest.TestCase):
 
     def test_prompt_uses_astro_colors_and_preserves_shell_placeholders(self):
         prompt = self.prompt()
-        self.assertIn(r'\e[37m\]\h', prompt, 'hostname must follow GNOME ANSI white')
-        self.assertIn(r'\e[94m\]', prompt)
-        self.assertNotIn('38;2;', prompt, 'do not override the built-in palette with custom RGB')
+        for rgb, token in [('167;111;193',r'\u'), ('154;150;143','@'),
+                           ('250;189;47',r'\h'), ('154;150;143',':'),
+                           ('190;189;186',r'\w'), ('202;170;104',r'\$')]:
+            self.assertIn(r'\[\e[38;2;'+rgb+r'm\]'+token,prompt)
+        # Exact reference colors are scoped to the prompt, not the ANSI palette.
         for placeholder in [r'\u', r'\h', r'\w', r'\$']:
             self.assertIn(placeholder, prompt)
         self.assertEqual(prompt.count(r'\['), prompt.count(r'\]'))

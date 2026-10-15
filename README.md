@@ -47,9 +47,11 @@ python3 ~/.config/kitty/astro_intro.py --effect 6 --duration 3
 
 **Astro Bash prompt**
 
-The familiar `user@host:path$` layout uses GNOME ANSI white for the username,
-hostname and directory, muted separators and a bright-blue prompt symbol.
-ANSI palette references replace the former custom RGB prompt colors.
+The familiar `user@host:path$` layout uses the owner's reference colors:
+purple username (`#a76fc1`), grey `@` and colon (`#9a968f`), golden hostname
+(`#fabd2f`), a quiet neutral path (`#bebdba`) and a softer gold prompt symbol
+(`#caaa68`). These explicit RGB roles affect only the prompt; applications keep
+the GNOME Soft ANSI palette and the neutral `#191919` background.
 This is scoped to interactive Kitty Bash sessions; other terminals
 are unchanged. Readline wrapping and kitty's native shell integration remain
 intact. Set `ASTRO_PROMPT=off` to keep your existing prompt; `NO_COLOR` or a dumb
