@@ -66,7 +66,6 @@ source ~/.config/kitty/astro_prompt.bash
 | Control | Action |
 | --- | --- |
 | `+→` / `+↓` | Open a terminal to the right / below in the current directory |
-| `✧↓` | Open Codex below, sized to six rows |
 | `▦` | Cycle the pane's group: none → 1 → 2 → 3 → 4 → none (colored) |
 | `\|↔\|` | Give every pane of this group the same width |
 | `⇕` | Give every pane of this group the same height |
@@ -75,6 +74,17 @@ source ~/.config/kitty/astro_prompt.bash
 | keyboard | Show kitty's keyboard shortcuts in a separate tab |
 | zoom | Zoom the pane (stack layout) and back |
 | `✕` | Close the pane (asks when a job is running) |
+
+Ordinary `+→` and `+↓` clicks split the clicked pane right or below. Shift-clicking
+adds a full-height column at the tab's right edge or a full-width row at its
+bottom, respectively, scaling the existing layout while preserving its proportions.
+New terminals inherit the clicked pane's working directory. Only the "Codex below"
+launcher button is removed; running Codex panes and their title badges remain unchanged.
+
+**Reload without restarting:** press Ctrl+Shift+F5 to reload configuration and
+refresh cached pane controls. When upgrading from the previous default binding,
+press it twice: the first reload installs the new binding; the second refreshes
+the title bars. Existing panes and running jobs remain open.
 
 - **Groups:** equalizing changes only the panes of the clicked pane's group;
   every other pane keeps its size. On an ungrouped pane the buttons equalize

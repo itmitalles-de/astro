@@ -19,8 +19,6 @@ from kitty import fast_data_types as fdt
 
 _STATE_ATTR = "_kitty_pane_buttons_state_v1"
 _BUTTON_RIGHT_MARGIN_CELLS = 1
-# Codex fits its working line, prompt box and footer into six rows.
-_CODEX_ROWS = 6
 _BAD_TITLE_CHARS = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 _PROMPT_MARKER = re.compile(r"\x1b\]133;([AC])([^\x1b\x07]*)(?:\x1b\\|\x07)")
 # Pane groups cycle none -> 1 -> ... -> 4 -> none; Gruvbox bright colors
@@ -62,9 +60,8 @@ def _language() -> str:
 
 _LANGUAGE = _language()
 _TOOLTIPS = {
-    "add_right": {"de": "Terminal rechts", "en": "Terminal right"},
-    "add_below": {"de": "Terminal unten", "en": "Terminal below"},
-    "codex_below": {"de": "Codex unten", "en": "Codex below"},
+    "add_right": {"de": "Rechts · Shift: Spalte", "en": "Right · Shift: column"},
+    "add_below": {"de": "Unten · Shift: Zeile", "en": "Below · Shift: row"},
     "group": {"de": "Gruppe {group} · Klick: nächste", "en": "Group {group} · click: next"},
     "equal_width": {"de": "Gruppe: gleich breit", "en": "Group: equal widths"},
     "equal_height": {"de": "Gruppe: gleich hoch", "en": "Group: equal heights"},
@@ -252,7 +249,7 @@ def _button_cells(bar: Any, is_zoomed: bool = False, title_width: int = 0,
     # One outline family, identical canvas and stroke width for every control.
     # Codepoints and paths are defined in build_pane_icons.py.
     labels = [("add_right", "\ue906\ue900 "), ("add_below", "\ue906\ue901 "),
-              ("codex_below", "\ue909\ue901 "), ("group", "\ue90a "),
+              ("group", "\ue90a "),
               ("equal_width", "\ue90b "), ("equal_height", "\ue90c "), ("copy", "\ue902 "),
               ("copy_command", "\ue907 "), ("shortcuts", "\ue908 "),
               ("zoom", ("\ue905" if is_zoomed else "\ue903") + " "), ("close", "\ue904 ")]
@@ -513,10 +510,13 @@ def _stop_hover_timer(boss: Any) -> None:
         fdt.remove_timer(state.pop("timer"))
 
 
-def _activate(boss: Any, window: Any, action: str) -> None:
+def _activate(boss: Any, window: Any, action: str, modifiers: int = 0) -> None:
     # Layout actions act on the active window, so focus the clicked pane first.
     boss.set_active_window(window, switch_os_window_if_needed=True)
     if action in ("add_right", "add_below"):
+        if modifiers & fdt.GLFW_MOD_SHIFT:
+            _launch_full_span(boss, window, horizontal=action == "add_right")
+            return
         tab = _splits_tab(window)
         if tab is None:
             return
@@ -525,9 +525,6 @@ def _activate(boss: Any, window: Any, action: str) -> None:
             f"launch --cwd=current --location={location} "
             f"--next-to=id:{window.id} --source-window=id:{window.id}"
         )
-    elif action == "codex_below":
-        _launch_codex_below(boss, window)
-        return
     elif action in ("expand", "collapse"):
         state = getattr(boss, _STATE_ATTR)
         if action == "expand":
@@ -571,51 +568,42 @@ def _splits_tab(window: Any) -> Any:
     return tab
 
 
-def _launch_codex_below(boss: Any, window: Any) -> None:
+def _launch_full_span(boss: Any, window: Any, horizontal: bool) -> None:
+    """Append one full-height column or full-width row around the old layout.
+
+    Preserve every old split and bias, rather than redistributing an intermediate
+    local split. The new strip gets the clicked pane's proportional axis share.
+    """
+    from kitty.layout.splits import Pair
     from kitty.launch import launch, parse_launch_args
 
     tab = _splits_tab(window)
     if tab is None:
         return
-    # An explicit bias skips proportional resizing, so only the source pane
-    # gives up space; _fit_rows then sets the exact height.
+    layout = tab.current_layout
+    source_group = tab.windows.group_for_window(window)
+    path = layout.pairs_root.find_window_in_tree(source_group.id) if source_group is not None else None
+    if path is None:
+        raise RuntimeError("Could not find the source pane in the split layout")
+    share = 1.0
+    for pair, is_first in path:
+        if pair.horizontal == horizontal and pair.one is not None and pair.two is not None:
+            share *= pair.bias if is_first else 1.0 - pair.bias
+    previous = Pair()
+    previous.unserialize(layout.pairs_root.serialize(), lambda group_id: group_id)
+    location = "vsplit" if horizontal else "hsplit"
     spec = parse_launch_args([
-        "--cwd=current", "--location=hsplit", "--bias=50",
+        "--cwd=current", f"--location={location}", "--bias=50",
         f"--next-to=id:{window.id}", f"--source-window=id:{window.id}",
     ])
-    # Shell integration types codex at the first prompt: it stays in the
-    # history and the pane returns to a normal shell when codex exits.
-    codex = launch(boss, spec.opts, spec.args, target_tab=tab,
-                   startup_command_via_shell_integration="codex")
-    if codex is None:
-        raise RuntimeError("Could not open the Codex pane")
-    _fit_rows(tab, codex, _CODEX_ROWS)
-
-
-def _fit_rows(tab: Any, window: Any, rows: int) -> None:
-    """Give a freshly split pane exactly `rows` text rows below its title bar.
-
-    Sets the bias of the pane's own split (kitty.layout.splits.Pair) so that
-    Pair.layout_pair and layout_dimension yield rows + 1 cells for it. Later
-    equalizing or resizing the OS window rescales it like any other split.
-    """
-    from kitty.layout.base import lgd
-
-    group = tab.windows.group_for_window(window)
-    pair = tab.current_layout.pairs_root.pair_for_window(group.id) if group is not None else None
-    if pair is None or pair.horizontal or not getattr(pair, "height", 0):
-        return
-    border_mult = 0 if lgd.draw_minimal_borders else 1
-    target = ((rows + 1) * lgd.cell_height + group.decoration("top", border_mult=border_mult)
-              + group.decoration("bottom", border_mult=border_mult))
-    bw = pair.border_width
-    other = pair.height - target - 2 * bw
-    if other < lgd.cell_height:
-        # Too little room: keep the regular split instead of crushing the source.
-        return
-    first = target if pair.one == group.id else other
-    # layout_pair uses int(bias * height) - bw for the first child.
-    pair.bias = (first + bw + 0.5) / pair.height
+    added = launch(boss, spec.opts, spec.args, target_tab=tab)
+    group = tab.windows.group_for_window(added) if added is not None else None
+    if group is None:
+        raise RuntimeError("Could not open the full-span terminal")
+    root = Pair(horizontal)
+    root.one, root.two = previous, group.id
+    root.bias = 1.0 / (1.0 + max(0.05, min(1.0, share)))
+    layout.pairs_root = root
     tab.relayout()
 
 
@@ -793,7 +781,7 @@ def _handle_title_bar_mouse(
             # A fresh press cancels a previous press released outside a title bar.
             state["pressed"].pop(os_window_id, None)
             if hit is not None:
-                state["pressed"][os_window_id] = (window_id, hit)
+                state["pressed"][os_window_id] = (window_id, hit, modifiers)
                 boss.set_active_window(window, switch_os_window_if_needed=True)
                 # Keep button clicks out of native drag/double-click bookkeeping.
                 manager = boss.os_window_map.get(os_window_id)
@@ -803,8 +791,8 @@ def _handle_title_bar_mouse(
         else:
             pressed = state["pressed"].pop(os_window_id, None)
             if pressed is not None:
-                if pressed == (window_id, hit) and window is not None:
-                    _activate(boss, window, hit)
+                if pressed[:2] == (window_id, hit) and window is not None and hit is not None:
+                    _activate(boss, window, hit, pressed[2] if len(pressed) > 2 else modifiers)
                 return
     except Exception as error:
         _report_failure(error)
