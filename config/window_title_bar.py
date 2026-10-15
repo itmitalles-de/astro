@@ -77,6 +77,17 @@ _TOOLTIPS = {
     "expand": {"de": "Mehr Buttons", "en": "More buttons"},
     "collapse": {"de": "Einklappen", "en": "Fold buttons"},
 }
+_MESSAGES = {
+    "no_command": {
+        "de": "Noch kein Shell-Befehl erkannt. Bitte einen Befehl mit aktiver Kitty-Shell-Integration ausführen.",
+        "en": "No shell command detected yet. Run a command with kitty shell integration active.",
+    },
+    "shortcuts_title": {"de": "Tastenkürzel · Esc schließen", "en": "Keyboard shortcuts · Esc closes"},
+}
+
+
+def _message(key: str) -> str:
+    return _MESSAGES[key][_LANGUAGE]
 
 
 def _report_failure(error: Exception) -> None:
@@ -123,8 +134,20 @@ def _install(boss: Any) -> dict[str, Any]:
     return state
 
 
+_INSTALLED_FOR: list[Any] = []
+
+
+def _ensure_installed(boss: Any) -> dict[str, Any]:
+    # runpy gives the watcher and the renderer separate module globals, so each
+    # copy installs once; both copies run identical code.
+    if not _INSTALLED_FOR or _INSTALLED_FOR[0] is not boss:
+        _install(boss)
+        _INSTALLED_FOR[:] = [boss]
+    return getattr(boss, _STATE_ATTR)
+
+
 def on_load(boss: Any, data: dict[str, Any]) -> None:
-    _install(boss)
+    _ensure_installed(boss)
 
 
 def _available_columns(bar: Any) -> int:
@@ -267,7 +290,7 @@ def draw_window_title(data: Any) -> str:
     title = _BAD_TITLE_CHARS.sub("", str(data.title))
     try:
         boss = fdt.get_boss()
-        _install(boss)
+        state = _ensure_installed(boss)
         window = boss.window_id_map.get(data.window_id)
         if window is None:
             return title
@@ -275,16 +298,16 @@ def draw_window_title(data: Any) -> str:
         if bar is None:
             raise RuntimeError("kitty per-window title-bar screen API is missing")
         tab = window.tabref()
-        state = getattr(boss, _STATE_ATTR)
         group = state["groups"].get(window.id)
         is_zoomed = tab is not None and tab.current_layout.name == "stack"
         agent, title = _agent_title(window, title, state)
-        segments: list[tuple[str, str]] = []
+        markers: list[tuple[str, str]] = []
         if data.needs_attention:
             # The bell: an agent waits for input or finished its turn.
-            segments.append(("\u25cf ", _color_sgr(_ATTENTION_COLOR, bold=True)))
+            markers.append(("\u25cf ", _color_sgr(_ATTENTION_COLOR, bold=True)))
         elif data.has_activity_since_last_focus and not data.is_active:
-            segments.append(("\u2022 ", "\x1b[2m"))
+            markers.append(("\u2022 ", "\x1b[2m"))
+        segments: list[tuple[str, str]] = []
         if group:
             # Name the group in the title too, so it stays visible in narrow panes.
             segments.append((f"\u25cf{group} ", _group_sgr(group)))
@@ -297,6 +320,7 @@ def draw_window_title(data: Any) -> str:
             segments.append((title, "\x1b[22;39m"))
         cells = _button_cells(bar, is_zoomed, sum(fdt.wcswidth(text) for text, _ in segments),
                               window.id in state["expanded"])
+        segments = markers + segments
         state["cells"][window.id] = cells
         if not cells:
             return _styled(segments, _available_columns(bar))[0]
@@ -318,6 +342,10 @@ def draw_window_title(data: Any) -> str:
         return "".join(parts)
     except Exception as error:
         _report_failure(error)
+        try:
+            getattr(fdt.get_boss(), _STATE_ATTR)["cells"][data.window_id] = []
+        except Exception:
+            pass
         return f"Controls unavailable | {title}"
 
 
@@ -345,7 +373,7 @@ def _control_at(window: Any, bar: Any, x: float, y: float) -> str | None:
         return None
     cell = int((x - geometry.left) // bar.cell_width)
     # Hit-test exactly what was drawn last; the layout depends on the title.
-    cells = getattr(fdt.get_boss(), _STATE_ATTR)["cells"].get(window.id) or _button_cells(bar)
+    cells = getattr(fdt.get_boss(), _STATE_ATTR)["cells"].get(window.id, [])
     for action, start, end, _ in cells:
         if start <= cell < end:
             return action
@@ -353,23 +381,28 @@ def _control_at(window: Any, bar: Any, x: float, y: float) -> str | None:
 
 
 def _pointer_target(boss: Any, state: dict[str, Any]) -> tuple[int, str | None] | None:
-    """Return (window id, control or None) for the title bar under the pointer."""
+    """Return (window id, control or None) for the title bar under the pointer.
+
+    Raises _NoPointer when the pointer position is unavailable.
+    """
+    if state.get("pointer") is False:
+        raise _NoPointer
     os_window_id = fdt.current_focused_os_window_id()
     manager = boss.os_window_map.get(os_window_id) if os_window_id else None
     tab = manager.active_tab if manager is not None else None
     if tab is None:
         return None
-    pointer = state.get("pointer")
-    if pointer is None:
-        try:
+    try:
+        pointer = state.get("pointer")
+        if pointer is None:
             pointer = state["pointer"] = _X11Pointer()
-        except Exception as error:
-            # No X11 pointer (e.g. native Wayland): no hints, agents still scan.
-            _report_failure(error)
-            pointer = state["pointer"] = False
-    if pointer is False:
-        return None
-    position = pointer.query(fdt.x11_window_id(os_window_id))
+        # Raises on native Wayland, where kitty has no X11 window.
+        position = pointer.query(fdt.x11_window_id(os_window_id))
+    except Exception as error:
+        # No X11 pointer: no hints, but agents still scan and nothing folds.
+        _report_failure(error)
+        state["pointer"] = False
+        raise _NoPointer from error
     size = fdt.get_os_window_size(os_window_id)
     if position is None or not size or not size["width"]:
         return None
@@ -385,6 +418,10 @@ def _pointer_target(boss: Any, state: dict[str, Any]) -> tuple[int, str | None] 
             if g.left <= x < g.right and g.top <= y < g.bottom:
                 return window.id, _control_at(window, bar, x, y)
     return None
+
+
+class _NoPointer(Exception):
+    pass
 
 
 class _X11Pointer:
@@ -416,6 +453,8 @@ class _X11Pointer:
 
 
 def _poll_hover(timer_id: int | None = None) -> None:
+    # Never stop the timer on errors: a failed tick is reported once and the
+    # next tick tries again.
     try:
         boss = fdt.get_boss()
         state = getattr(boss, _STATE_ATTR, None)
@@ -427,8 +466,14 @@ def _poll_hover(timer_id: int | None = None) -> None:
         now = time.monotonic()
         if now - state.get("agent_scan", 0.0) >= _AGENT_CACHE_SECONDS:
             state["agent_scan"] = now
+            _prune_closed(boss, state)
             changed = _scan_agents(boss, state)
-        target = _pointer_target(boss, state)
+        try:
+            target = _pointer_target(boss, state)
+        except _NoPointer:
+            # Unknown pointer: keep hints off and leave unfolded panes open.
+            _refresh_title_bars(boss, changed)
+            return
         old = state["hover"]
         if target == old and not changed and not (state["expanded"] - {target[0] if target else None}):
             return
@@ -442,8 +487,16 @@ def _poll_hover(timer_id: int | None = None) -> None:
         _refresh_title_bars(boss, changed)
     except Exception as error:
         _report_failure(error)
-        # Without pointer data, stop polling instead of failing every tick.
-        _stop_hover_timer(fdt.get_boss())
+
+
+def _prune_closed(boss: Any, state: dict[str, Any]) -> None:
+    """Forget per-pane state of closed panes; window ids are never reused."""
+    alive = boss.window_id_map
+    for key in ("agents", "cells", "groups"):
+        entries = state.get(key, {})
+        for window_id in [w for w in entries if w not in alive]:
+            del entries[window_id]
+    state["expanded"] &= set(alive)
 
 
 def _refresh_title_bars(boss: Any, window_ids: set[int]) -> None:
@@ -589,6 +642,7 @@ def _equalize_group(boss: Any, window: Any, horizontal: bool) -> None:
     ungrouped pane equalizes the whole tab along that axis only. Works on the
     biases of kitty.layout.splits.Pair, like `layout_action equalize`.
     """
+    from kitty.layout.base import lgd
     from kitty.layout.splits import Pair
 
     tab = _splits_tab(window)
@@ -643,6 +697,11 @@ def _equalize_group(boss: Any, window: Any, horizontal: bool) -> None:
         unit = (target - fixed) / units
         first = round(one_units * unit + one_fixed)
         bw = node.border_width
+        cell = lgd.cell_width if horizontal else lgd.cell_height
+        if unit < cell or first < cell or target - first - 2 * bw < cell:
+            # Nested splits can ask for more than the space allows (members
+            # stacked across the axis need different sizes); keep this split.
+            return
         # layout_pair gives the first child int(bias * size) - border pixels.
         # The parent assigns this pair `target` pixels in the next layout.
         if target > 0:
@@ -660,12 +719,16 @@ def _copy_command(window: Any) -> None:
 
     cmdline = window.last_cmd_cmdline
     if not cmdline:
-        raise RuntimeError("Noch kein Shell-Befehl erkannt. Bitte einen Befehl mit aktiver Kitty-Shell-Integration ausführen.")
+        raise RuntimeError(_message("no_command"))
     # Kitty 0.49.2 loses the output-start mark when a command prints nothing:
     # the next prompt replaces that line and even last_run returns older output.
     # Verify the latest prompt interval before reading the native output range.
-    markers = [m[1] for m in _PROMPT_MARKER.finditer(window.as_text(as_ansi=True, add_history=True))
-               if not m[2]]
+    text = window.as_text(as_ansi=True)
+    markers = [m[1] for m in _PROMPT_MARKER.finditer(text) if not m[2]]
+    if len(markers) < 2:
+        # The last prompt pair scrolled off screen; scan the history as well.
+        text = window.as_text(as_ansi=True, add_history=True)
+        markers = [m[1] for m in _PROMPT_MARKER.finditer(text) if not m[2]]
     # If the start has already left scrollback, retain Kitty's partial output.
     has_output = len(markers) < 2 or markers[-1] == "C" or markers[-2:] == ["C", "A"]
     output = window.cmd_output(CommandOutput.last_run, as_ansi=False, add_wrap_markers=False) if has_output else ""
@@ -681,7 +744,7 @@ def _show_shortcuts(boss: Any, window: Any) -> None:
     from kitty.constants import config_dir, kitten_exe
     from kitty.tabs import SpecialWindow
 
-    # A separate full-width tab keeps the native overview readable in a 5x3
+    # A separate full-width tab keeps the native overview readable in a large
     # grid without resizing the terminal or sending input to its running job.
     options = fdt.get_options()
     data = collect_keys_data(options)
@@ -696,7 +759,7 @@ def _show_shortcuts(boss: Any, window: Any) -> None:
     tab = boss._new_tab(SpecialWindow(
         [kitten_exe(), "command-palette"],
         stdin=json.dumps(data).encode("utf-8"),
-        override_title="Tastenkürzel · Esc schließen",
+        override_title=_message("shortcuts_title"),
         env={
             "KITTEN_RUNNING_AS_UI": "1",
             "KITTY_CONFIG_DIRECTORY": config_dir,
