@@ -48,6 +48,26 @@ an unmodified kitty.
   beam cursor with a short trail, hover-only link underlines.
 - Desktop notification when a long shell command finishes in an unfocused
   pane; trailing spaces are stripped when copying from TUIs.
+- **Right click:** paste a PNG screenshot copied by Flameshot as a quoted file
+  path into the clicked pane; otherwise paste clipboard text. Agent CLIs can
+  read the image at that path. This does not emulate a native image attachment.
+- **Middle click:** paste the primary text selection, including in mouse-aware
+  TUIs. Both mouse bindings take precedence over application mouse handling.
+  Ctrl+Shift+V keeps kitty's native clipboard behavior.
+
+Screenshots stay in `${XDG_CACHE_HOME:-~/.cache}/astro/clipboard` with private
+permissions. They are not automatically deleted, so earlier pasted paths keep
+working; delete old screenshots there manually when no longer needed. The
+clipboard itself is never replaced. PNG extraction requires `wl-paste`
+(`wl-clipboard`) in a Wayland desktop, or `xclip` in a pure X11 session.
+
+## Tests
+
+Run the tests with kitty's Python runtime (the kitten imports kitty APIs):
+
+```sh
+kitty +runpy 'import unittest; r = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover("tests")); raise SystemExit(not r.wasSuccessful())'
+```
 
 ## Requirements
 
