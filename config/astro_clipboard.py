@@ -2,11 +2,43 @@
 """Paste clipboard screenshots as private files without changing the clipboard."""
 import os
 from pathlib import Path
+import select
 import shlex
 import subprocess
 import tempfile
+import time
 
 from kittens.tui.handler import result_handler
+
+MAX_IMAGE_BYTES = 64 * 1024 * 1024
+
+
+def read_bounded(command: list[str], limit: int, timeout: float) -> bytes:
+    """Bound clipboard output while reading, not after buffering the whole image."""
+    process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                               stderr=subprocess.DEVNULL, start_new_session=True)
+    assert process.stdout is not None
+    deadline = time.monotonic() + timeout
+    data = bytearray()
+    try:
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 or not select.select([process.stdout], [], [], remaining)[0]:
+                raise subprocess.TimeoutExpired(command, timeout)
+            chunk = os.read(process.stdout.fileno(), min(65536, limit - len(data) + 1))
+            if not chunk:
+                status = process.wait(timeout=max(0, deadline - time.monotonic()))
+                if status:
+                    raise subprocess.CalledProcessError(status, command)
+                return bytes(data)
+            data.extend(chunk)
+            if len(data) > limit:
+                raise ValueError('Clipboard output exceeds the size limit')
+    finally:
+        process.stdout.close()
+        if process.poll() is None:
+            process.kill()
+        process.wait(timeout=1)
 
 
 def clipboard_image() -> str:
@@ -17,11 +49,12 @@ def clipboard_image() -> str:
     else:
         types_cmd = ['xclip', '-selection', 'clipboard', '-out', '-target', 'TARGETS']
         image_cmd = ['xclip', '-selection', 'clipboard', '-out', '-target', 'image/png']
+    saved = None
     try:
-        types = subprocess.run(types_cmd, capture_output=True, check=True, timeout=2).stdout
+        types = read_bounded(types_cmd, 64 * 1024, 2)
         if b'image/png' not in types.splitlines():
             return ''
-        data = subprocess.run(image_cmd, capture_output=True, check=True, timeout=5).stdout
+        data = read_bounded(image_cmd, MAX_IMAGE_BYTES, 5)
         if not data.startswith(b'\x89PNG\r\n\x1a\n'):
             return ''
         cache = Path(os.environ.get('XDG_CACHE_HOME') or Path.home() / '.cache') / 'astro' / 'clipboard'
@@ -29,13 +62,16 @@ def clipboard_image() -> str:
         cache.chmod(0o700)
         # Unique files must survive subsequent copies and the kitten process.
         with tempfile.NamedTemporaryFile(prefix='screenshot-', suffix='.png', dir=cache, delete=False) as image:
+            saved = Path(image.name)
+            image.write(data)
+        # Closing/flushing the file must succeed before handing its path to a CLI.
+        return str(saved.resolve())
+    except (OSError, ValueError, subprocess.SubprocessError):
+        if saved is not None:
             try:
-                image.write(data)
+                saved.unlink(missing_ok=True)
             except OSError:
-                Path(image.name).unlink(missing_ok=True)
-                raise
-            return str(Path(image.name).resolve())
-    except (OSError, subprocess.SubprocessError):
+                pass
         return ''
 
 

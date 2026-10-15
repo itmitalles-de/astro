@@ -20,11 +20,11 @@ class ClipboardTests(unittest.TestCase):
         png = b'\x89PNG\r\n\x1a\n' + b'test clipboard image'
         calls = []
 
-        def run(args, **kwargs):
+        def run(args, limit, timeout):
             calls.append(args)
-            return subprocess.CompletedProcess(args, 0, b'image/png\ntext/plain\n' if '--list-types' in args else png)
+            return b'image/png\ntext/plain\n' if '--list-types' in args else png
 
-        with tempfile.TemporaryDirectory() as cache, patch.dict(os.environ, XDG_CACHE_HOME=cache, WAYLAND_DISPLAY='wayland-0'), patch.object(module.subprocess, 'run', side_effect=run):
+        with tempfile.TemporaryDirectory() as cache, patch.dict(os.environ, XDG_CACHE_HOME=cache, WAYLAND_DISPLAY='wayland-0'), patch.object(module, 'read_bounded', side_effect=run):
             result = module.clipboard_image()
             self.assertEqual(Path(result).read_bytes(), png)
             self.assertEqual(Path(result).stat().st_mode & 0o777, 0o600)
@@ -39,8 +39,8 @@ class ClipboardTests(unittest.TestCase):
         spec.loader.exec_module(module)
         for types, data, error in [(b'text/plain\n', b'', None), (b'image/png\n', b'', None), (b'image/png\n', b'not png', None), (b'', b'', FileNotFoundError()), (b'', b'', subprocess.TimeoutExpired('wl-paste', 2))]:
             with self.subTest(types=types, data=data, error=error), tempfile.TemporaryDirectory() as cache:
-                responses = [subprocess.CompletedProcess([], 0, types), subprocess.CompletedProcess([], 0, data)]
-                with patch.dict(os.environ, XDG_CACHE_HOME=cache, WAYLAND_DISPLAY='wayland-0'), patch.object(module.subprocess, 'run', side_effect=error or responses):
+                responses = [types, data]
+                with patch.dict(os.environ, XDG_CACHE_HOME=cache, WAYLAND_DISPLAY='wayland-0'), patch.object(module, 'read_bounded', side_effect=error or responses):
                     self.assertEqual(module.clipboard_image(), '')
                     self.assertEqual(list(Path(cache).iterdir()), [])
 

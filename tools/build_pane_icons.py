@@ -2,7 +2,7 @@
 """Build the uniform outline font used by Astro's pane title controls.
 
 Run with Python and fontTools to regenerate the font after editing paths:
-`python3 build_pane_icons.py [OUTPUT.ttf]` (default: the user font directory).
+`python3 build_pane_icons.py [OUTPUT.ttf]` (default: this repository's fonts/).
 The installed font is a runtime asset; Kitty does not run this generator.
 """
 
@@ -15,7 +15,7 @@ from fontTools.pens.ttGlyphPen import TTGlyphPen
 
 
 FAMILY = "Astro Pane Controls"
-OUTPUT = Path.home() / ".local/share/fonts/astro-pane-controls/AstroPaneControls.ttf"
+OUTPUT = Path(__file__).resolve().parents[1] / "fonts/AstroPaneControls.ttf"
 # 2026-10-15 00:00 UTC in seconds since 1904-01-01, the OpenType epoch.
 FONT_TIMESTAMP = 3874867200
 SCALE = 43.75

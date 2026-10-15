@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Keep the familiar user@host:path$ layout; only change its color roles.
+# PS1 expands later; debian_chroot is an optional value from the system profile.
+# shellcheck disable=SC2016,SC2154
 if [[ $- == *i* && -n ${KITTY_WINDOW_ID-} && ${ASTRO_PROMPT-} != off ]]; then
     if [[ ${TERM-} == dumb || -n ${NO_COLOR+x} ]]; then
         PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '

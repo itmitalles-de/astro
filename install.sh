@@ -6,18 +6,44 @@
 # directory next to the kitty configuration first.
 set -eu
 
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 config_dir=${KITTY_CONFIG_DIRECTORY:-${XDG_CONFIG_HOME:-$HOME/.config}/kitty}
 data_dir=${XDG_DATA_HOME:-$HOME/.local/share}
 font_dir=$data_dir/fonts/astro-pane-controls
 bin_dir=${ASTRO_BIN_DIRECTORY:-$HOME/.local/bin}
 bashrc=${ASTRO_BASHRC:-$HOME/.bashrc}
 supported=0.49.2
+config_files='kitty.conf window_title_bar.py reload_pane_controls.py astro_clipboard.py astro_intro.py astro.bash astro_prompt.bash sessions/default.conf'
+replace_session=${ASTRO_REPLACE_SESSION:-0}
 
 if ! command -v python3 >/dev/null 2>&1; then
     printf '%s\n' 'Error: Python 3 is required for Astro. Nothing installed.' >&2
     exit 1
 fi
+
+case "$replace_session" in
+    0|1) ;;
+    *) printf '%s\n' 'Error: ASTRO_REPLACE_SESSION must be 0 or 1. Nothing installed.' >&2; exit 1 ;;
+esac
+# Check all packaged inputs and the managed hook before replacing user files.
+require_source() {
+    if [ ! -f "$1" ] || [ ! -r "$1" ]; then
+        printf 'Error: missing or unreadable source: %s. Nothing installed.\n' "$1" >&2
+        exit 1
+    fi
+}
+for file in $config_files; do
+    require_source "$here/config/$file"
+    if [ -d "$config_dir/$file" ]; then
+        printf 'Error: expected a file, found directory: %s. Nothing installed.\n' "$config_dir/$file" >&2
+        exit 1
+    fi
+done
+for file in assets/astro.desktop assets/astro.svg bin/astro fonts/AstroPaneControls.ttf tools/install_bash_hook.py; do
+    require_source "$here/$file"
+done
+for size in 32 64 128 256 512; do require_source "$here/assets/astro-$size.png"; done
+python3 "$here/tools/install_bash_hook.py" --check "$bashrc"
 
 if command -v kitty >/dev/null 2>&1; then
     version=$(kitty --version | awk '{print $2}')
@@ -31,8 +57,22 @@ fi
 
 mkdir -p "$config_dir/sessions" "$font_dir"
 backup="$config_dir/astro-backup-$(date +%Y%m%d-%H%M%S)-$$"
-for file in kitty.conf window_title_bar.py reload_pane_controls.py astro_clipboard.py astro_intro.py astro.bash astro_prompt.bash sessions/default.conf; do
-    if [ -e "$config_dir/$file" ]; then
+mkdir -m 700 "$backup"
+report_failure() {
+    status=$?
+    if [ "$status" -ne 0 ] && [ -d "$backup" ]; then
+        printf 'Installation stopped; backup directory: %s\n' "$backup" >&2
+    fi
+    trap - EXIT
+    exit "$status"
+}
+trap report_failure EXIT
+for file in $config_files; do
+    if [ "$file" = sessions/default.conf ] && [ "$replace_session" != 1 ] && { [ -e "$config_dir/$file" ] || [ -L "$config_dir/$file" ]; }; then
+        printf 'Keeping personal workspace: %s\n' "$config_dir/$file"
+        continue
+    fi
+    if [ -e "$config_dir/$file" ] || [ -L "$config_dir/$file" ]; then
         mkdir -p "$backup/$(dirname "$file")"
         mv "$config_dir/$file" "$backup/$file"
     fi
@@ -60,10 +100,12 @@ fi
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then
     gtk-update-icon-cache -f -t "$data_dir/icons/hicolor" >/dev/null 2>&1 || :
 fi
-cp "$here/fonts/AstroPaneControls.ttf" "$font_dir/"
+install_asset "$here/fonts/AstroPaneControls.ttf" "$font_dir/AstroPaneControls.ttf" fonts/AstroPaneControls.ttf 644
 if command -v fc-cache >/dev/null 2>&1; then
     fc-cache -f "$font_dir"
 fi
 
-[ -d "$backup" ] && echo "Previous files moved to $backup"
-echo "Astro installed in $config_dir. Restart kitty to load it."
+echo "Installation backup directory: $backup"
+echo "Astro installed in $config_dir."
+echo "Open Astro, or reload existing windows with Ctrl+Shift+F5 (twice when upgrading the default binding)."
+echo "New Bash panes load the startup hook; running panes and jobs are not restarted."

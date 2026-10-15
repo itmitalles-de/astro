@@ -30,7 +30,9 @@ shows all ten before repeating, including when several panes open together.
 The greeting lasts at most
 1.25 seconds, disappears without adding scrollback, and stops as soon as you
 type; your input is left in the terminal queue for the shell. Descendant Bash
-shells skip the greeting in the same pane. Direct non-shell command launches,
+shells skip the greeting in the same pane. Command shells such as `bash -ic`
+start their agent or monitor immediately; their greeting waits until a real
+interactive prompt is opened. Direct non-shell command launches,
 tiny panes, redirected output and `TERM=dumb` skip it too. Bash remains the
 normal login shell, preserving kitty's native shell integration.
 
@@ -85,6 +87,8 @@ launcher button is removed; running Codex panes and their title badges remain un
 refresh cached pane controls. When upgrading from the previous default binding,
 press it twice: the first reload installs the new binding; the second refreshes
 the title bars. Existing panes and running jobs remain open.
+Reload also releases cached pointer backends, including the earlier Xlib backend,
+so native-pointer fixes take effect without restarting the terminal.
 
 - **Groups:** equalizing changes only the panes of the clicked pane's group;
   every other pane keeps its size. On an ungrouped pane the buttons equalize
@@ -131,6 +135,10 @@ permissions. They are not automatically deleted, so earlier pasted paths keep
 working; delete old screenshots there manually when no longer needed. The
 clipboard itself is never replaced. PNG extraction requires `wl-paste`
 (`wl-clipboard`) in a Wayland desktop, or `xclip` in a pure X11 session.
+PNG reads are limited to 64 MiB while streaming, with a five-second deadline;
+oversized payloads, data without a PNG signature or unavailable clipboard owners
+fall back to native clipboard text.
+An incomplete file is removed if writing or closing it fails.
 
 Terminal programs may read the normal system clipboard without a permission
 dialog (`clipboard_control ... read-clipboard`). This also includes programs
@@ -140,7 +148,31 @@ paste-safety confirmations remain enabled.
 
 ## Tests
 
-Run the tests with kitty's Python runtime (the kitten imports kitty APIs):
+Run the standard source, shell-syntax and unit checks from the repository root:
+
+```sh
+python3 tools/check.py
+```
+
+The runner uses kitty's Python runtime for unit tests and clears display variables
+for those tests. ShellCheck runs when installed; `--require-shellcheck` makes it
+mandatory. Full verification also rebuilds assets in a temporary clone and runs
+real mouse input against a private Xvfb, never the owner's desktop:
+
+```sh
+python3 tools/check.py --require-shellcheck --assets --integration
+```
+
+The asset check needs the system Python with PyGObject, Rsvg, Cairo and fontTools.
+The integration check needs Xvfb and libXtst; `--kitty`, `--xvfb` and
+`--xvfb-library-path` support private tool installations. It verifies stale X11
+IDs, reloads, normal and Shift splits, source directories, existing processes
+and layout proportions. It starts no real agent CLIs and touches no desktop
+clipboard. GitHub Actions configures the same checks with a checksum-pinned Kitty
+0.49.2 binary and a commit-pinned checkout action.
+Whitespace checks cover all tracked source, including in a clean CI checkout.
+
+To run only the unit suite directly:
 
 ```sh
 kitty +runpy 'import unittest; r = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover("tests")); raise SystemExit(not r.wasSuccessful())'
@@ -154,7 +186,8 @@ kitty +runpy 'import unittest; r = unittest.TextTestRunner(verbosity=2).run(unit
   and the splits layout internals are not public APIs; check Astro after every
   kitty upgrade.
 - Linux with kitty on X11 (`linux_display_server x11`, also under Xwayland).
-  On native Wayland everything except the hover hints works.
+  Native Wayland is not yet verified; see [issue #1](https://github.com/itmitalles-de/astro/issues/1).
+  Hover hints use checked XCB queries so a stale X11 ID cannot terminate Kitty.
 - Optional: Python 3 with [fontTools](https://github.com/fonttools/fonttools)
   to rebuild the icon font.
 
@@ -171,14 +204,27 @@ The installer copies `config/` into `~/.config/kitty` (or
 Astro's desktop entry, application icons and `~/.local/bin/astro`. It adds one
 managed, Kitty-only source block to `~/.bashrc` (backed up first). It keeps your
 shell and aliases unchanged, applies Astro's prompt palette only in Kitty, and
-does not modify other terminal emulators. For a staged
+does not modify other terminal emulators. Source files and Bash hook markers are
+validated before replacing user files, including write access when the hook needs
+an update. An already-current read-only hook requires no write. The update is atomic and preserves
+managed-dotfile symlinks, existing permissions and unrelated line endings.
+Backup directories are private (0700); failures after installation starts print
+their backup location. This is not a full transactional rollback for disk errors.
+
+**Upgrades preserve `sessions/default.conf`**, including your personal pane layout.
+The sample workspace is only copied on first installation. To deliberately reset
+it to the sample, use `ASTRO_REPLACE_SESSION=1 ./install.sh`; the previous session
+is backed up first. No running panes are closed. For a staged
 install, set `KITTY_CONFIG_DIRECTORY`, `XDG_DATA_HOME`, `ASTRO_BIN_DIRECTORY`
 and `ASTRO_BASHRC` to staging paths.
 
 Open **Astro** from the application launcher, or run `astro`. At each app
 start, the launcher copies the literal `/resume` (without a newline) into the
 clipboard and primary selection. Opening another pane or tab does not overwrite
-the clipboard again. Clipboard failure never prevents the terminal from opening.
+the clipboard again. `astro --help` and `astro --version` do not change either selection.
+Each clipboard command has a two-second deadline (override with
+`ASTRO_CLIPBOARD_TIMEOUT`); missing GNU `timeout` skips initialization instead of
+running an unbounded helper. Clipboard failure never prevents the terminal from opening.
 New Kitty processes use `kitty.app.png` as their window icon. Existing processes may
 need a restart before their icon changes; no running sessions are closed by
 the installer.
@@ -203,7 +249,10 @@ All controls use one outline icon font, `fonts/AstroPaneControls.ttf`
 python3 tools/build_pane_icons.py fonts/AstroPaneControls.ttf
 ```
 
-The build is reproducible byte for byte.
+Without an output argument, the builder writes to this repository's `fonts/`,
+not your installed user fonts. The build is reproducible byte for byte for a
+given toolchain; `tools/check_assets.py` checks repeated builds and validates the
+shipped glyph outlines and metrics without modifying the working tree.
 
 ## License
 

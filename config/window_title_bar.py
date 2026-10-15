@@ -25,7 +25,7 @@ _PROMPT_MARKER = re.compile(r"\x1b\]133;([AC])([^\x1b\x07]*)(?:\x1b\\|\x07)")
 # reserved for functional pane grouping, independent of the neutral agent titles.
 _GROUP_COLORS = ("211;134;155", "184;187;38", "131;165;152", "251;73;52")
 # Agent CLIs by foreground process name: badge glyph, name and color (None
-# keeps the title color). All agent names inherit the Codex-style Paper title.
+# keeps the title color). Agent names inherit the terminal's neutral title color.
 _AGENTS = {
     "claude": ("\u273b", "Claude", None),
     "codex": ("\u203a_", "Codex", None),
@@ -127,7 +127,23 @@ def _install(boss: Any) -> dict[str, Any]:
         # poll the pointer while a kitty window has focus. Restart the timer
         # with this module's code after a reload.
         _stop_hover_timer(boss)
-        state["timer"] = fdt.add_timer(_poll_hover, _HOVER_POLL_SECONDS, True)
+        # The boss outlives renderer modules: never retain an old native backend.
+        pointer = state.pop("pointer", None)
+        try:
+            close = getattr(pointer, "close", None)
+            if callable(close):
+                close()
+            elif getattr(pointer, "_display", None):
+                # The earlier implementation owned a private XOpenDisplay connection.
+                import ctypes
+                pointer._lib.XCloseDisplay.argtypes = [ctypes.c_void_p]
+                pointer._lib.XCloseDisplay.restype = ctypes.c_int
+                pointer._lib.XCloseDisplay(pointer._display)
+                pointer._display = None
+        except Exception as error:
+            _report_failure(error)
+        finally:
+            state["timer"] = fdt.add_timer(_poll_hover, _HOVER_POLL_SECONDS, True)
     return state
 
 
@@ -422,31 +438,67 @@ class _NoPointer(Exception):
 
 
 class _X11Pointer:
-    """XQueryPointer on a private display connection (kitty runs on X11 here)."""
+    """Checked XCB queries: a stale XID must never invoke Xlib's fatal handler."""
 
     def __init__(self) -> None:
         import ctypes
 
         self._ctypes = ctypes
-        lib = ctypes.CDLL("libX11.so.6")
-        lib.XOpenDisplay.restype = ctypes.c_void_p
-        lib.XOpenDisplay.argtypes = [ctypes.c_char_p]
-        lib.XQueryPointer.restype = ctypes.c_int
-        lib.XQueryPointer.argtypes = [ctypes.c_void_p, ctypes.c_ulong] + [ctypes.c_void_p] * 7
+        # Layouts from xcb/xproto.h; XIDs and cookies are always 32-bit.
+        class Cookie(ctypes.Structure):
+            _fields_ = [("sequence", ctypes.c_uint)]
+
+        class Reply(ctypes.Structure):
+            _fields_ = [("response_type", ctypes.c_uint8), ("same_screen", ctypes.c_uint8),
+                        ("sequence", ctypes.c_uint16), ("length", ctypes.c_uint32),
+                        ("root", ctypes.c_uint32), ("child", ctypes.c_uint32),
+                        ("root_x", ctypes.c_int16), ("root_y", ctypes.c_int16),
+                        ("win_x", ctypes.c_int16), ("win_y", ctypes.c_int16),
+                        ("mask", ctypes.c_uint16), ("pad0", ctypes.c_uint8 * 2)]
+
+        lib = ctypes.CDLL("libxcb.so.1")
+        lib.xcb_connect.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int)]
+        lib.xcb_connect.restype = ctypes.c_void_p
+        lib.xcb_connection_has_error.argtypes = [ctypes.c_void_p]
+        lib.xcb_connection_has_error.restype = ctypes.c_int
+        lib.xcb_disconnect.argtypes = [ctypes.c_void_p]
+        lib.xcb_disconnect.restype = None
+        lib.xcb_query_pointer.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        lib.xcb_query_pointer.restype = Cookie
+        lib.xcb_query_pointer_reply.argtypes = [ctypes.c_void_p, Cookie, ctypes.POINTER(ctypes.c_void_p)]
+        lib.xcb_query_pointer_reply.restype = ctypes.POINTER(Reply)
         self._lib = lib
-        self._display = lib.XOpenDisplay(None)
-        if not self._display:
+        self._free = ctypes.CDLL(None).free
+        self._free.argtypes = [ctypes.c_void_p]
+        self._free.restype = None
+        self._connection = lib.xcb_connect(None, None)
+        if not self._connection or lib.xcb_connection_has_error(self._connection):
+            self.close()
             raise RuntimeError("Cannot open the X11 display for button hints")
 
     def query(self, xid: int) -> tuple[int, int] | None:
-        if not xid:
+        if not xid or not self._connection:
             return None
         c = self._ctypes
-        root, child = c.c_ulong(), c.c_ulong()
-        rx, ry, wx, wy, mask = c.c_int(), c.c_int(), c.c_int(), c.c_int(), c.c_uint()
-        same_screen = self._lib.XQueryPointer(
-            self._display, xid, *(c.byref(v) for v in (root, child, rx, ry, wx, wy, mask)))
-        return (wx.value, wy.value) if same_screen else None
+        error = c.c_void_p()
+        cookie = self._lib.xcb_query_pointer(self._connection, xid)
+        reply = self._lib.xcb_query_pointer_reply(self._connection, cookie, c.byref(error))
+        try:
+            if error.value or not reply or not reply.contents.same_screen:
+                return None
+            return reply.contents.win_x, reply.contents.win_y
+        finally:
+            self._free(reply)
+            self._free(error)
+
+    def close(self) -> None:
+        connection = getattr(self, '_connection', None)
+        if connection:
+            self._connection = None
+            self._lib.xcb_disconnect(connection)
+
+    def __del__(self) -> None:
+        self.close()
 
 
 def _poll_hover(timer_id: int | None = None) -> None:

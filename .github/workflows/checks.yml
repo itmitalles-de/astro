@@ -1,0 +1,41 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-x11:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            shellcheck xvfb libxtst6 libx11-xcb1 libxcb1 libxkbcommon-x11-0 \
+            libxcursor1 libxinerama1 libxrandr2 libgl1 libegl1 libfontconfig1 \
+            python3-gi python3-cairo python3-fonttools gir1.2-rsvg-2.0
+      - name: Install the supported Kitty release with a pinned checksum
+        env:
+          KITTY_SHA256: d573618b911e9c461bd421b96c13c74c7f1cb2f1ac9c327818d4ff84366cf5c6
+        run: |
+          curl --fail --location --retry 2 \
+            https://github.com/kovidgoyal/kitty/releases/download/v0.49.2/kitty-0.49.2-x86_64.txz \
+            --output "$RUNNER_TEMP/kitty.txz"
+          printf '%s  %s\n' "$KITTY_SHA256" "$RUNNER_TEMP/kitty.txz" | sha256sum --check -
+          mkdir "$RUNNER_TEMP/kitty"
+          tar -xJf "$RUNNER_TEMP/kitty.txz" -C "$RUNNER_TEMP/kitty"
+          printf '%s\n' "$RUNNER_TEMP/kitty/bin" >> "$GITHUB_PATH"
+      - name: Check sources, tests, assets and private X11 integration
+        run: python3 tools/check.py --require-shellcheck --assets --integration
