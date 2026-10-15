@@ -98,9 +98,10 @@ source ~/.config/kitty/astro_prompt.bash
   (`config/sessions/default.conf`) plus a monitor column.
 - The 16 ANSI colors precisely match GNOME Terminal 3.58.0's built-in GNOME
   palette, recorded from its GSettings schema defaults in
-  `tests/fixtures/gnome-palette.json`. Dark background `#171421`, default text
-  `#d0cfcc` and blue accent `#2a7bde` use that palette too; no GNOME desktop
-  theme switching is implied. Rounded tabs (shown from two tabs on), dimmed inactive panes,
+  `tests/fixtures/gnome-palette.json`. The original neutral background
+  `#191919` is preserved; default text `#d0cfcc` and blue accent `#2a7bde`
+  follow GNOME. No GNOME desktop theme switching is implied.
+  Rounded tabs (shown from two tabs on), dimmed inactive panes,
   beam cursor with a short trail, hover-only link underlines.
 - Desktop notification when a long shell command finishes in an unfocused
   pane; trailing spaces are stripped when copying from TUIs.

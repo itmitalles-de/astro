@@ -18,7 +18,7 @@ class GnomeThemeTests(unittest.TestCase):
         self.assertEqual(len(colors),16)
         self.assertEqual([options[f'color{i}'] for i in range(16)],colors)
         self.assertEqual(options['foreground'], colors[7])
-        self.assertEqual(options['background'], colors[0])
+        self.assertEqual(options['background'], '#191919', 'preserve the original neutral background')
         self.assertEqual(options['active_border_color'], colors[12])
         self.assertEqual(options['bold_text_in_bright_colors'], 'no')
         self.assertEqual(options['shell'], '/bin/bash --login')
