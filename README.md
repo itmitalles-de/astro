@@ -38,6 +38,19 @@ python3 ~/.config/kitty/astro_intro.py --list
 python3 ~/.config/kitty/astro_intro.py --effect 6 --duration 3
 ```
 
+**Astro Bash prompt**
+
+The familiar `user@host:path$` layout uses pale eye green for the username and
+prompt symbol, warm fur taupe for the host, cream for the directory, and muted
+separators. This is scoped to interactive Kitty Bash sessions; other terminals
+are unchanged. Readline wrapping and kitty's native shell integration remain
+intact. Set `ASTRO_PROMPT=off` to keep your existing prompt; `NO_COLOR` or a dumb
+terminal selects a plain prompt. To update an already open Bash shell, run:
+
+```sh
+source ~/.config/kitty/astro_prompt.bash
+```
+
 **Pane controls in every title bar**
 
 | Control | Action |
@@ -123,8 +136,9 @@ cd astro
 The installer copies `config/` into `~/.config/kitty` (or
 `$KITTY_CONFIG_DIRECTORY`), backs up replaced files, installs the icon font,
 Astro's desktop entry, application icons and `~/.local/bin/astro`. It adds one
-managed, Kitty-only source block to `~/.bashrc` (backed up first); it does not
-change your shell, prompt, aliases or other terminal emulators. For a staged
+managed, Kitty-only source block to `~/.bashrc` (backed up first). It keeps your
+shell and aliases unchanged, applies Astro's prompt palette only in Kitty, and
+does not modify other terminal emulators. For a staged
 install, set `KITTY_CONFIG_DIRECTORY`, `XDG_DATA_HOME`, `ASTRO_BIN_DIRECTORY`
 and `ASTRO_BASHRC` to staging paths.
 

@@ -31,7 +31,7 @@ fi
 
 mkdir -p "$config_dir/sessions" "$font_dir"
 backup="$config_dir/astro-backup-$(date +%Y%m%d-%H%M%S)-$$"
-for file in kitty.conf window_title_bar.py astro_clipboard.py astro_intro.py astro.bash sessions/default.conf; do
+for file in kitty.conf window_title_bar.py astro_clipboard.py astro_intro.py astro.bash astro_prompt.bash sessions/default.conf; do
     if [ -e "$config_dir/$file" ]; then
         mkdir -p "$backup/$(dirname "$file")"
         mv "$config_dir/$file" "$backup/$file"
