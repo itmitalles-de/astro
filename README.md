@@ -96,11 +96,13 @@ source ~/.config/kitty/astro_prompt.bash
 
 - Splits layout with proportional sizing, a 3 × 3 agent workspace session
   (`config/sessions/default.conf`) plus a monitor column.
-- The 16 ANSI colors precisely match GNOME Terminal 3.58.0's built-in GNOME
-  palette, recorded from its GSettings schema defaults in
-  `tests/fixtures/gnome-palette.json`. The original neutral background
-  `#191919` is preserved; default text `#d0cfcc` and blue accent `#2a7bde`
-  follow GNOME. No GNOME desktop theme switching is implied.
+- GNOME Soft retains GNOME Terminal 3.58.0's color family while blending bright
+  highlights up to 15% toward the background and default text by 10%. Already
+  dark colors are not dimmed further; modified colors keep at least 4.5:1 contrast
+  against the background. The original neutral background `#191919` stays fixed.
+  Original and softened palettes are recorded in `tests/fixtures/gnome-palette.json`
+  and `tests/fixtures/gnome-soft-palette.json`. Default text is `#bebdba`, with
+  GNOME blue `#2a7bde`. No GNOME desktop theme switching is implied.
   Rounded tabs (shown from two tabs on), dimmed inactive panes,
   beam cursor with a short trail, hover-only link underlines.
 - Desktop notification when a long shell command finishes in an unfocused

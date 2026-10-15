@@ -1,0 +1,23 @@
+{
+  "name": "GNOME Soft",
+  "base": "gnome-palette.json",
+  "background": "#191919",
+  "colors": [
+    "#171421",
+    "#c01c28",
+    "#259360",
+    "#a2734c",
+    "#12488b",
+    "#a347ba",
+    "#278d9c",
+    "#bebdba",
+    "#5e5c64",
+    "#d85749",
+    "#2fb56b",
+    "#ca970e",
+    "#2a7bde",
+    "#b85dc2",
+    "#2fadc0",
+    "#dcdcdc"
+  ]
+}
