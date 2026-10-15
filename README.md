@@ -15,9 +15,11 @@ The mascot is based on Astro, a real long-haired brown/grey tabby: tall ears,
 a dark forehead M, a pink nose and a cream ruff. In the owner's front-facing
 reference, the missing/closed eye is on the viewer's left and the single open
 pale green eye is on the viewer's right. The icon and both ASCII cat poses keep
-that exact orientation; do not mirror them. The simplified icon uses eight bold
-shapes rather than detailed whiskers, cheek stripes or decorative marks.
-The app icon and outlined wordmark share the terminal's existing Gruvbox palette.
+that exact orientation; do not mirror them. The cat stays minimal, without
+detailed whiskers or cheek stripes. Its background is a terminal window with
+only slightly rounded corners (16px radius on a 512px canvas), a title bar and
+a small prompt. Paper text and blue accents connect the icon and wordmark to
+the Codex-style terminal chrome; the cat retains its natural fur and eye colors.
 Reference photographs are personal and are not distributed in this repository.
 
 New Bash terminal panes greet you with a short CPU-only ASCII animation:
@@ -44,9 +46,12 @@ python3 ~/.config/kitty/astro_intro.py --effect 6 --duration 3
 
 **Astro Bash prompt**
 
-The familiar `user@host:path$` layout uses pale eye green for the username and
-prompt symbol, warm fur taupe for the host, cream for the directory, and muted
-separators. This is scoped to interactive Kitty Bash sessions; other terminals
+The familiar `user@host:path$` layout uses Paper (`#d8d4ce`) for the username,
+hostname and directory, muted separators (`#99968f`) and a Codex-blue prompt
+symbol (`#63a8f8`). The Paper tone is sampled from the owner's Codex reference;
+blue matches Codex 0.162.1's documented `UI_ACCENT` / `CHATGPT_BLUE_200` in
+[`style.rs`](https://github.com/openai/codex/blob/rust-v0.162.1/codex-rs/tui/src/style.rs).
+This is scoped to interactive Kitty Bash sessions; other terminals
 are unchanged. Readline wrapping and kitty's native shell integration remain
 intact. Set `ASTRO_PROMPT=off` to keep your existing prompt; `NO_COLOR` or a dumb
 terminal selects a plain prompt. To update an already open Bash shell, run:
@@ -82,7 +87,7 @@ source ~/.config/kitty/astro_prompt.bash
 
 **Agent-aware panes**
 
-- Panes running `claude`, `codex` or `hermes` get a colored badge
+- Panes running `claude`, `codex` or `hermes` get a neutral Paper badge
   (✻ Claude, ›_ Codex, ☤ Hermes). Codex session ids give way to the working
   directory.
 - A red dot marks a pane whose program rang the bell (an agent finished or
@@ -92,7 +97,9 @@ source ~/.config/kitty/astro_prompt.bash
 
 - Splits layout with proportional sizing, a 3 × 3 agent workspace session
   (`config/sessions/default.conf`) plus a monitor column.
-- Gruvbox colors, rounded tabs (shown from two tabs on), dimmed inactive panes,
+- Codex-style Paper foreground, neutral title bars and blue active borders;
+  semantic ANSI red/green/status colors stay intact (Codex inherits these
+  from the terminal too). Rounded tabs (shown from two tabs on), dimmed inactive panes,
   beam cursor with a short trail, hover-only link underlines.
 - Desktop notification when a long shell command finishes in an unfocused
   pane; trailing spaces are stripped when copying from TUIs.

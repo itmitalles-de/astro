@@ -147,9 +147,9 @@ def frame(effect: int, t: float, width: int = 64, height: int = 24) -> list[str]
     return [''.join(row) for row in grid]
 
 
-# Kept deliberately close to Astro's Gruvbox terminal palette.
-COLORS = {'fur': '189;165;133', 'cream': '235;219;178', 'eye': '184;187;106',
-          'nose': '211;134;155', 'dim': '102;92;79', 'sky': '131;165;152'}
+# Paper/blue chrome follows the terminal; the cat retains its fur and eye colors.
+COLORS = {'fur': '189;165;133', 'cream': '216;212;206', 'eye': '184;187;106',
+          'nose': '211;134;155', 'dim': '153;150;143', 'sky': '99;168;248'}
 
 
 def ansi_frame(rows: list[str], colors: bool = True) -> str:

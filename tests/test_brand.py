@@ -11,7 +11,13 @@ class BrandTests(unittest.TestCase):
     def test_minimal_icon_has_one_explicit_eye_on_reference_side(self):
         svg = ET.parse(ROOT/'assets/astro.svg').getroot()
         shapes = [node for node in svg.iter() if node.tag.rsplit('}', 1)[-1] in {'path','rect','circle','ellipse','polygon'}]
-        self.assertLessEqual(len(shapes), 10, 'icon is still too detailed')
+        self.assertLessEqual(len(shapes), 12, 'keep the cat simple, with only a minimal terminal frame')
+        window = svg.find(".//*[@id='terminal-window']")
+        self.assertIsNotNone(window, 'logo background must look like a terminal window')
+        assert window is not None
+        self.assertLessEqual(float(window.get('rx','999')), 20, 'corners must only be slightly rounded')
+        self.assertIsNotNone(svg.find(".//*[@id='terminal-titlebar']"))
+        self.assertIsNotNone(svg.find(".//*[@id='terminal-prompt']"))
         opened = svg.find(".//*[@id='eye-open-viewer-right']")
         closed = svg.find(".//*[@id='eye-closed-viewer-left']")
         self.assertIsNotNone(opened, 'open eye must be on the reference image-right')

@@ -24,14 +24,14 @@ _CODEX_ROWS = 6
 _BAD_TITLE_CHARS = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 _PROMPT_MARKER = re.compile(r"\x1b\]133;([AC])([^\x1b\x07]*)(?:\x1b\\|\x07)")
 # Pane groups cycle none -> 1 -> ... -> 4 -> none; Gruvbox bright colors
-# that stay apart from the agent badges below.
+# reserved for functional pane grouping, independent of the neutral agent titles.
 _GROUP_COLORS = ("211;134;155", "184;187;38", "131;165;152", "251;73;52")
 # Agent CLIs by foreground process name: badge glyph, name and color (None
-# keeps the title color). Claude orange, Codex neutral, Hermes gold.
+# keeps the title color). All agent names inherit the Codex-style Paper title.
 _AGENTS = {
-    "claude": ("\u273b", "Claude", "217;119;87"),
+    "claude": ("\u273b", "Claude", None),
     "codex": ("\u203a_", "Codex", None),
-    "hermes": ("\u2624", "Hermes", "250;189;47"),
+    "hermes": ("\u2624", "Hermes", None),
 }
 _AGENT_CACHE_SECONDS = 2.0
 _UUID = re.compile(r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", re.I)
