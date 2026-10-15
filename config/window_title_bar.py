@@ -475,15 +475,12 @@ def _poll_hover(timer_id: int | None = None) -> None:
             _refresh_title_bars(boss, changed)
             return
         old = state["hover"]
-        if target == old and not changed and not (state["expanded"] - {target[0] if target else None}):
+        if target == old and not changed:
             return
         state["hover"] = target
         changed |= {w for w in (old and old[0], target and target[0]) if w}
-        # Expanded controls fold away once the pointer leaves their title bar.
-        for window_id in list(state["expanded"]):
-            if target is None or target[0] != window_id:
-                state["expanded"].discard(window_id)
-                changed.add(window_id)
+        # Opening is deliberate: keep controls open until the collapse button
+        # is clicked. Pointer drift changes hints, never the expanded state.
         _refresh_title_bars(boss, changed)
     except Exception as error:
         _report_failure(error)

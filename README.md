@@ -26,8 +26,8 @@ an unmodified kitty.
   every other pane keeps its size. On an ungrouped pane the buttons equalize
   the whole tab along that axis only.
 - **Folding:** when the title would otherwise be cut, all controls except close
-  fold behind `‹`. Click it to unfold; they fold again when the pointer leaves
-  the title bar.
+  fold behind `‹`. Click it to unfold; the controls stay open until you click
+  the fold button again. Moving the pointer away does not close them.
 - **Hover hints:** the title bar describes the control under the pointer.
   Hints are English or German, following the system locale; put `de` or `en`
   into `~/.config/kitty/pane_controls_lang` to pin a language.
