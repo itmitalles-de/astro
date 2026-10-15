@@ -1,26 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="280" viewBox="0 0 1040 280" role="img"><title>Astro — quiet company, sharp tools</title><g transform="translate(12 12) scale(.5)"><rect width="512" height="512" rx="116" fill="#191919" />
-  <rect x="13" y="13" width="486" height="486" rx="104" fill="none" stroke="#3c3836" stroke-width="2" />
-  
-  <path d="M111 225 94 69 123 93 151 73 200 136Q256 116 312 136L361 73 389 93 418 69 401 225 427 277 408 280 444 328 417 328 432 368 400 363 395 405 362 392 335 438 305 421 256 454 207 421 177 438 150 392 117 405 112 363 80 368 95 328 68 328 104 280 85 277Z" fill="#a49380" />
-  <path d="m104 99-14-41m22 33-7-38m14 35 1-25m288 36 14-41m-22 33 7-38m-14 35-1-25" fill="none" stroke="#a49380" stroke-width="6" stroke-linecap="round" />
-  
-  <path d="m112 105 16 116 47-65Z M400 105l-16 116-47-65Z" fill="#504945" />
-  <path d="m125 133 12 71 23-43Z M387 133l-12 71-23-43Z" fill="#d5c4a1" />
-  <path d="M128 221q8-57 72-85 56-20 112 0 64 28 72 85l-26 57-51-33-51 16-51-16-51 33Z" fill="#796f64" />
-  
-  <path d="m207 196 13-43 36 31 36-31 13 43M256 131v24M161 183l32 25M351 183l-32 25M130 262l38 9M382 262l-38 9M122 283l37 9M390 283l-37 9" fill="none" stroke="#3c3836" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-  
-  <path d="M149 221q34-12 69 4M363 221q-34-12-69 4" fill="none" stroke="#ebdbb2" stroke-width="9" stroke-linecap="round" />
-  <path d="M148 239q37-21 74 7-38 40-74-7M364 239q-37-21-74 7 38 40 74-7" fill="#bfc78c" stroke="#282828" stroke-width="6" stroke-linejoin="round" />
-  <path d="M186 235v25M326 235v25" stroke="#282828" stroke-width="9" stroke-linecap="round" />
-  <circle cx="176" cy="242" r="3.5" fill="#fbf1c7" /><circle cx="316" cy="242" r="3.5" fill="#fbf1c7" />
-  
-  <path d="M124 291 151 307 148 335 175 326 174 360 200 347 210 391 234 377 256 423 278 377 302 391 312 347 338 360 337 326 364 335 361 307 388 291 398 326 376 338 385 368 357 361 349 401 323 389 306 430 278 415 256 442 234 415 206 430 189 389 163 401 155 361 127 368 136 338 114 326Z" fill="#d5c4a1" />
-  <path d="M207 276q-43-9-47 23-4 32 40 40l-22 38 26-9 1 43 27-17 24 38 24-38 27 17 1-43 26 9-22-38q44-8 40-40-4-32-47-23l-49 26Z" fill="#ebdbb2" />
-  <path d="M238 285q18-10 36 0l-18 18Z" fill="#d3869b" stroke="#504945" stroke-width="4" stroke-linejoin="round" />
-  <path d="M256 303v15m0-2q-14 15-28 1m28-1q14 15 28 1" fill="none" stroke="#504945" stroke-width="5" stroke-linecap="round" />
-  <g fill="#8b7763"><circle cx="202" cy="299" r="3" /><circle cx="216" cy="294" r="3" /><circle cx="208" cy="310" r="3" /><circle cx="310" cy="299" r="3" /><circle cx="296" cy="294" r="3" /><circle cx="304" cy="310" r="3" /></g>
-  <g fill="none" stroke="#f2e5c4" stroke-width="4" stroke-linecap="round"><path d="m195 309-74-17m73 28-81 3m79 9-66 21m191-44 74-17m-73 28 81 3m-79 9 66 21" /></g>
-  <path d="m226 360 15 12-15 12m28 0h25" fill="none" stroke="#504945" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="m430 125 5 12 12 5-12 5-5 12-5-12-12-5 12-5Z" fill="#b8bb26" />
-</g><g transform="translate(326 76)" fill="none" stroke="#ebdbb2" stroke-width="11" stroke-linecap="square" stroke-linejoin="round"><path d="M0 100 30 0 60 100M12 64H48" transform="translate(0 0)" /><path d="M60 4H16Q0 4 0 20V31Q0 46 16 49L44 54Q60 57 60 72V83Q60 100 44 100H0" transform="translate(134 0)" /><path d="M0 0H60M30 0V100" transform="translate(268 0)" /><path d="M0 100V0H38Q60 0 60 22V28Q60 50 38 50H0M34 50 66 100" transform="translate(402 0)" /><path d="M16 0H44Q60 0 60 16V84Q60 100 44 100H16Q0 100 0 84V16Q0 0 16 0" transform="translate(536 0)" /></g><path d="M326 217h70" stroke="#b8bb26" stroke-width="5" /><text x="421" y="223" fill="#bdae93" font-family="monospace" font-size="17" letter-spacing="2">QUIET COMPANY. SHARP TOOLS.</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="280" viewBox="0 0 1040 280" role="img">
+  <title>Astro — quiet company, sharp tools</title>
+  <g transform="translate(12 12) scale(.5)">
+    <rect width="512" height="512" rx="116" fill="#191919" />
+    <rect x="13" y="13" width="486" height="486" rx="104" fill="none" stroke="#3c3836" stroke-width="2" />
+    <path d="M111 225 94 69 123 93 151 73 200 136Q256 116 312 136L361 73 389 93 418 69 401 225 427 277 408 280 444 328 417 328 432 368 400 363 395 405 362 392 335 438 305 421 256 454 207 421 177 438 150 392 117 405 112 363 80 368 95 328 68 328 104 280 85 277Z" fill="#a49380" />
+    <path d="m104 99-14-41m22 33-7-38m14 35 1-25m288 36 14-41m-22 33 7-38m-14 35-1-25" fill="none" stroke="#a49380" stroke-width="6" stroke-linecap="round" />
+    <path d="m112 105 16 116 47-65Z M400 105l-16 116-47-65Z" fill="#504945" />
+    <path d="m125 133 12 71 23-43Z M387 133l-12 71-23-43Z" fill="#d5c4a1" />
+    <path d="M128 221q8-57 72-85 56-20 112 0 64 28 72 85l-26 57-51-33-51 16-51-16-51 33Z" fill="#796f64" />
+    <path d="m207 196 13-43 36 31 36-31 13 43M256 131v24M161 183l32 25M351 183l-32 25M130 262l38 9M382 262l-38 9M122 283l37 9M390 283l-37 9" fill="none" stroke="#3c3836" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M149 221q34-12 69 4M363 221q-34-12-69 4" fill="none" stroke="#ebdbb2" stroke-width="9" stroke-linecap="round" />
+    <path d="M148 239q37-21 74 7-38 40-74-7M364 239q-37-21-74 7 38 40 74-7" fill="#bfc78c" stroke="#282828" stroke-width="6" stroke-linejoin="round" />
+    <path d="M186 235v25M326 235v25" stroke="#282828" stroke-width="9" stroke-linecap="round" />
+    <circle cx="176" cy="242" r="3.5" fill="#fbf1c7" />
+    <circle cx="316" cy="242" r="3.5" fill="#fbf1c7" />
+    <path d="M124 291 151 307 148 335 175 326 174 360 200 347 210 391 234 377 256 423 278 377 302 391 312 347 338 360 337 326 364 335 361 307 388 291 398 326 376 338 385 368 357 361 349 401 323 389 306 430 278 415 256 442 234 415 206 430 189 389 163 401 155 361 127 368 136 338 114 326Z" fill="#d5c4a1" />
+    <path d="M207 276q-43-9-47 23-4 32 40 40l-22 38 26-9 1 43 27-17 24 38 24-38 27 17 1-43 26 9-22-38q44-8 40-40-4-32-47-23l-49 26Z" fill="#ebdbb2" />
+    <path d="M238 285q18-10 36 0l-18 18Z" fill="#d3869b" stroke="#504945" stroke-width="4" stroke-linejoin="round" />
+    <path d="M256 303v15m0-2q-14 15-28 1m28-1q14 15 28 1" fill="none" stroke="#504945" stroke-width="5" stroke-linecap="round" />
+    <g fill="#8b7763">
+      <circle cx="202" cy="299" r="3" />
+      <circle cx="216" cy="294" r="3" />
+      <circle cx="208" cy="310" r="3" />
+      <circle cx="310" cy="299" r="3" />
+      <circle cx="296" cy="294" r="3" />
+      <circle cx="304" cy="310" r="3" />
+    </g>
+    <g fill="none" stroke="#f2e5c4" stroke-width="4" stroke-linecap="round">
+      <path d="m195 309-74-17m73 28-81 3m79 9-66 21m191-44 74-17m-73 28 81 3m-79 9 66 21" />
+    </g>
+    <path d="m226 360 15 12-15 12m28 0h25" fill="none" stroke="#504945" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="m430 125 5 12 12 5-12 5-5 12-5-12-12-5 12-5Z" fill="#b8bb26" />
+  </g>
+  <g transform="translate(326 76)" fill="none" stroke="#ebdbb2" stroke-width="11" stroke-linecap="square" stroke-linejoin="round">
+    <path d="M0 100 30 0 60 100M12 64H48" transform="translate(0 0)" />
+    <path d="M60 4H16Q0 4 0 20V31Q0 46 16 49L44 54Q60 57 60 72V83Q60 100 44 100H0" transform="translate(134 0)" />
+    <path d="M0 0H60M30 0V100" transform="translate(268 0)" />
+    <path d="M0 100V0H38Q60 0 60 22V28Q60 50 38 50H0M34 50 66 100" transform="translate(402 0)" />
+    <path d="M16 0H44Q60 0 60 16V84Q60 100 44 100H16Q0 100 0 84V16Q0 0 16 0" transform="translate(536 0)" />
+  </g>
+  <path d="M326 217h70" stroke="#b8bb26" stroke-width="5" />
+  <text x="421" y="223" fill="#bdae93" font-family="monospace" font-size="17" letter-spacing="2">QUIET COMPANY. SHARP TOOLS.</text>
+</svg>

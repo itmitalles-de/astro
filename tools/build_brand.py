@@ -30,6 +30,7 @@ def build_logo():
     ET.SubElement(logo, f'{{{SVG}}}path', d='M326 217h70', stroke='#b8bb26', **{'stroke-width': '5'})
     text = ET.SubElement(logo, f'{{{SVG}}}text', x='421', y='223', fill='#bdae93', **{'font-family': 'monospace', 'font-size': '17', 'letter-spacing': '2'})
     text.text = 'QUIET COMPANY. SHARP TOOLS.'
+    ET.indent(logo, space='  ')
     ET.ElementTree(logo).write(ROOT / 'assets/astro-logo.svg', encoding='unicode', xml_declaration=False)
 
 
