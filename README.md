@@ -122,6 +122,12 @@ working; delete old screenshots there manually when no longer needed. The
 clipboard itself is never replaced. PNG extraction requires `wl-paste`
 (`wl-clipboard`) in a Wayland desktop, or `xclip` in a pure X11 session.
 
+Terminal programs may read the normal system clipboard without a permission
+dialog (`clipboard_control ... read-clipboard`). This also includes programs
+running remotely over SSH, so only use trusted programs when the clipboard may
+contain sensitive data. Reading the primary selection still requires permission;
+paste-safety confirmations remain enabled.
+
 ## Tests
 
 Run the tests with kitty's Python runtime (the kitten imports kitty APIs):

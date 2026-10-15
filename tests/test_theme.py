@@ -21,7 +21,7 @@ class GnomeThemeTests(unittest.TestCase):
         self.assertEqual(options['foreground'], colors[7])
         self.assertEqual(options['background'], '#191919', 'preserve the original neutral background')
         self.assertEqual(options['active_border_color'], colors[12])
-        self.assertEqual(options['bold_text_in_bright_colors'], 'no')
+        self.assertNotIn('bold_text_in_bright_colors', options, 'not a supported Kitty option')
         self.assertEqual(options['shell'], '/bin/bash --login')
         self.assertIn('splits:', options['enabled_layouts'])
         def luminance(color):
