@@ -42,7 +42,7 @@ class GnomeThemeTests(unittest.TestCase):
         assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        self.assertEqual(set(module._AGENTS), {'claude','codex','hermes'})
+        self.assertEqual(set(module._AGENTS), {'claude','codex','hermes','agy'})
         for glyph, name, override in module._AGENTS.values():
             self.assertTrue(glyph and name)
             self.assertIsNone(override, 'agent names must inherit the GNOME title color')

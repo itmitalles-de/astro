@@ -30,6 +30,7 @@ _AGENTS = {
     "claude": ("\u273b", "Claude", None),
     "codex": ("\u203a_", "Codex", None),
     "hermes": ("\u2624", "Hermes", None),
+    "agy": ("\u203a_", "agy", None),
 }
 _AGENT_CACHE_SECONDS = 2.0
 _UUID = re.compile(r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", re.I)
@@ -191,10 +192,14 @@ def _agent_title(window: Any, title: str, state: dict[str, Any]) -> tuple[str | 
     if cached is not None and cached[1] == title and now - cached[0] < _AGENT_CACHE_SECONDS:
         return cached[2], cached[3]
     agent, shown = _detect_agent(window), title
+    if agent == "agy":
+        shown = _agy_session_title(window) or title
     if agent is not None:
         # Drop spinners and status glyphs that agents put in front of titles.
-        shown = _LEADING_SYMBOLS.sub("", title).strip()
-        if shown.lower() in ("claude code", "claude", "codex", "hermes", "hermes agent"):
+        shown = _LEADING_SYMBOLS.sub("", shown).strip()
+        defaults = {"claude": ("claude", "claude code"), "codex": ("codex",),
+                    "hermes": ("hermes", "hermes agent"), "agy": ("agy",)}
+        if shown.lower() in defaults[agent]:
             shown = ""
         if agent == "codex" and (not shown or _UUID.fullmatch(shown)):
             # Codex titles itself with a session id; the directory says more.
@@ -216,6 +221,43 @@ def _detect_agent(window: Any) -> str | None:
     return name if name in _AGENTS else None
 
 
+def _agy_session_title(window: Any) -> str | None:
+    """Read only the title annotation for this process's held session lock.
+
+    agy keeps /rename in a protobuf-text annotation without updating OSC titles.
+    The open presence lock identifies the pane's session even when several
+    agy processes share a working directory. Never guess from recent files.
+    """
+    import json
+    import os
+
+    try:
+        pgrp = os.tcgetpgrp(window.child.child_fd)
+        with os.scandir(f"/proc/{pgrp}/fd") as descriptors:
+            for entry in descriptors:
+                try:
+                    lock = os.readlink(entry.path)
+                except OSError:
+                    continue  # Descriptors can close while agy is working.
+                if not lock.startswith("/") or not lock.endswith(".lock"):
+                    continue
+                directory, filename = os.path.split(lock)
+                root, directory = os.path.split(directory)
+                session, suffix = os.path.splitext(filename)
+                if (directory != "presence" or suffix != ".lock"
+                        or not _UUID.fullmatch(session)
+                        or os.path.basename(root) != "antigravity-cli"):
+                    continue
+                with open(os.path.join(root, "annotations", session + ".pbtxt")) as f:
+                    annotation = f.read(16384)
+                match = re.search(r'^\s*title\s*:\s*("(?:[^"\\]|\\.)*")', annotation, re.M)
+                if match:
+                    return _BAD_TITLE_CHARS.sub("", json.loads(match[1])).strip() or None
+    except (OSError, ValueError, TypeError, AttributeError):
+        pass  # Missing or changing annotations must never break pane controls.
+    return None
+
+
 def _scan_agents(boss: Any, state: dict[str, Any]) -> set[int]:
     """Return visible panes whose agent changed since their title was drawn.
 
@@ -234,6 +276,11 @@ def _scan_agents(boss: Any, state: dict[str, Any]) -> set[int]:
                 if cached is not None and cached[2] != _detect_agent(window):
                     del cache[window.id]
                     changed.add(window.id)
+                elif cached is not None and cached[2] == "agy":
+                    # /rename changes the annotation, not the terminal title.
+                    del cache[window.id]
+                    if _agent_title(window, cached[1], state)[1] != cached[3]:
+                        changed.add(window.id)
     return changed
 
 

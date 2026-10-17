@@ -105,6 +105,9 @@ so native-pointer fixes take effect without restarting the terminal.
 - Panes running `claude`, `codex` or `hermes` get a neutral GNOME-colored badge
   (✻ Claude, ›_ Codex, ☤ Hermes). Codex session ids give way to the working
   directory.
+- `agy` panes show their session's `/rename` title. Astro reads only the title
+  annotation associated with that process's open presence lock; renames refresh
+  within two seconds, including when several sessions share a directory.
 - A red dot marks a pane whose program rang the bell (an agent finished or
   waits for input); `•` marks background output since the pane last had focus.
 
