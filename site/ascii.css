@@ -1,0 +1,47 @@
+/* The artwork retains Astro's terminal colors in either page theme. */
+.ascii-art{margin:0 0 34px}
+.ascii-field{position:relative;height:420px;isolation:isolate;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--terminal,#191919);contain:layout paint}
+.ascii-field canvas{display:block;width:100%;height:100%;visibility:hidden}
+.ascii-field[data-ready=true] canvas{visibility:visible}
+.ascii-fallback{position:absolute;inset:0;display:grid;place-content:center;margin:0;padding:20px;color:#bdae93;font:clamp(16px,2.2vw,25px)/1.15 'IBM Plex Mono',monospace;text-align:center;white-space:pre;pointer-events:none}
+.ascii-fallback .ascii-eye{color:#bfc78c}
+.ascii-field[data-ready=true] .ascii-fallback{display:none}
+.ascii-caption{display:flex;align-items:center;justify-content:space-between;gap:8px 24px;flex-wrap:wrap;padding-top:12px;font-size:.8rem;color:var(--muted)}
+.ascii-controls{display:flex;align-items:center;gap:8px}
+.ascii-controls[hidden]{display:none}
+.ascii-controls button{min-height:44px;border:1px solid var(--line);border-radius:5px;padding:8px 13px;background:transparent;color:var(--fg);font:400 .75rem/1.4 'IBM Plex Mono',monospace}
+.ascii-controls button:hover:not(:disabled){background:var(--surface);border-color:var(--subtle)}
+.ascii-controls button:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
+@media(max-width:760px){.ascii-field{height:320px}.ascii-caption{align-items:flex-start}.ascii-art{margin-bottom:26px}}
+@media(max-width:480px){.ascii-field{height:290px}.ascii-caption{gap:10px}.ascii-controls{width:100%}.ascii-controls button{flex:1}}
+
+/* Variant two: editorial split, with a complete playful cat beside the copy. */
+:root[data-ascii-variant=zoomies] .hero{display:grid;grid-template-columns:minmax(0,1.03fr) minmax(0,1fr);column-gap:44px}
+:root[data-ascii-variant=zoomies] .hero-heading{display:block;grid-column:1;align-self:center;margin-bottom:34px}
+:root[data-ascii-variant=zoomies] .hero h1{font-size:clamp(3rem,4.4vw,4.25rem)}
+:root[data-ascii-variant=zoomies] .hero-copy{margin-top:25px}
+:root[data-ascii-variant=zoomies] .ascii-art{grid-column:2;grid-row:1}
+:root[data-ascii-variant=zoomies] .ascii-field{height:500px}
+:root[data-ascii-variant=zoomies] .product-meta,:root[data-ascii-variant=zoomies] .product{grid-column:1/-1}
+
+/* Variant three: native-dark immersive canvas with a copy-safe left half. */
+:root[data-ascii-variant=hyperraum] .hero{display:grid;grid-template-columns:minmax(0,1fr)}
+:root[data-ascii-variant=hyperraum] .hero-heading,:root[data-ascii-variant=hyperraum] .ascii-art{grid-column:1;grid-row:1}
+:root[data-ascii-variant=hyperraum] .hero-heading{position:relative;z-index:1;display:block;width:53%;align-self:center;margin:0;padding:38px 34px 105px;color:#e4e2df;background:#191919}
+:root[data-ascii-variant=hyperraum] .hero h1{font-size:clamp(3rem,4.3vw,4.1rem)}
+:root[data-ascii-variant=hyperraum] .hero-copy{margin-top:24px}
+:root[data-ascii-variant=hyperraum] .hero-copy>p{color:#aaa7a1}
+:root[data-ascii-variant=hyperraum] .hero-actions{gap:16px;margin-top:24px}
+:root[data-ascii-variant=hyperraum] .source-link{color:#e4e2df}
+:root[data-ascii-variant=hyperraum] .ascii-field{height:610px}
+:root[data-ascii-variant=hyperraum] .ascii-fallback{left:54%}
+
+@media(max-width:760px){
+  :root[data-ascii-variant=zoomies] .hero,:root[data-ascii-variant=hyperraum] .hero{display:block}
+  :root[data-ascii-variant=zoomies] .hero-heading,:root[data-ascii-variant=hyperraum] .hero-heading{width:auto;margin-bottom:32px;padding:0;color:var(--fg);background:transparent}
+  :root[data-ascii-variant=hyperraum] .hero-copy>p{color:var(--muted)}
+  :root[data-ascii-variant=hyperraum] .source-link{color:var(--fg)}
+  :root[data-ascii-variant=zoomies] .ascii-field,:root[data-ascii-variant=hyperraum] .ascii-field{height:320px}
+  :root[data-ascii-variant=hyperraum] .ascii-fallback{left:0}
+}
+@media(max-width:480px){:root[data-ascii-variant=zoomies] .ascii-field,:root[data-ascii-variant=hyperraum] .ascii-field{height:290px}}

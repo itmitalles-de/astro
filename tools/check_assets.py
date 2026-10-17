@@ -11,7 +11,14 @@ import tempfile
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def check_brand_copies():
+    for name in ('astro.svg', 'astro-128.png'):
+        if (ROOT/'assets'/name).read_bytes() != (ROOT/'site/assets'/name).read_bytes():
+            raise ValueError(f'site/assets/{name} is out of sync with the canonical app mascot')
+
+
 def main():
+    check_brand_copies()
     import cairo
     from fontTools.ttLib import TTFont
     with tempfile.TemporaryDirectory(prefix='astro-assets-') as folder:

@@ -82,6 +82,66 @@ class IntroTests(unittest.TestCase):
             os.close(master)
             os.close(slave)
 
+    def test_default_greeting_waits_for_typing_and_preserves_the_first_command(self):
+        import fcntl
+        import os
+        import pty
+        import select
+        import shutil
+        import struct
+        import subprocess
+        import termios
+        import time
+        master, slave = pty.openpty()
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 28, 80, 0, 0))
+        original = termios.tcgetattr(slave)
+        executable = shutil.which('python3')
+        script = f"import runpy,os; m=runpy.run_path({str(PATH)!r}); m['play'](0); os.write(1,b'FIRST-COMMAND:'+os.read(0,100))"
+        assert executable is not None
+        process = subprocess.Popen([executable, '-c', script], stdin=slave, stdout=slave, stderr=slave, env=dict(os.environ, TERM='xterm-kitty'))
+        output = b''
+        try:
+            deadline = time.monotonic()+2
+            while b'\x1b[?1049h' not in output and time.monotonic()<deadline:
+                if select.select([master], [], [], .05)[0]:
+                    output += os.read(master,65536)
+            self.assertIn(b'\x1b[?1049h',output)
+            deadline = time.monotonic()+1.7
+            while time.monotonic()<deadline:
+                if select.select([master], [], [], .05)[0]:
+                    output += os.read(master,65536)
+            self.assertIsNone(process.poll(), 'greeting must not time out while idle')
+            self.assertFalse(b'\x1b[?1049l' in output, 'must stay visible until typing')
+            os.write(master,b'echo astro-first-command\n')
+            deadline=time.monotonic()+2
+            while b'FIRST-COMMAND:echo astro-first-command' not in output and time.monotonic()<deadline:
+                if select.select([master], [], [], .05)[0]:
+                    output += os.read(master,65536)
+            process.wait(timeout=1)
+            self.assertIn(b'FIRST-COMMAND:echo astro-first-command',output)
+            self.assertEqual(termios.tcgetattr(slave),original)
+        finally:
+            if process.poll() is None:
+                process.kill(); process.wait()
+            os.close(master); os.close(slave)
+
+    def test_effects_have_distinct_cat_actions_not_the_same_portrait(self):
+        spec = importlib.util.spec_from_file_location('astro_intro_actions', PATH)
+        assert spec is not None and spec.loader is not None
+        intro = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(intro)
+        self.assertTrue(hasattr(intro, 'SCENES'), 'each effect needs its own animated cat poses')
+        self.assertEqual(len(intro.SCENES),10)
+        self.assertEqual(len(set(intro.SCENES)),10)
+        for poses in intro.SCENES:
+            self.assertGreaterEqual(len(poses),2)
+            self.assertGreater(len(set(poses)),1)
+            for pose in poses:
+                self.assertTrue(all(row.isascii() for row in pose))
+                self.assertLessEqual(''.join(pose).count('@'),1)
+        for effect in range(10):
+            self.assertNotEqual(intro.frame(effect,5.0,64,24),intro.frame(effect,5.4,64,24),intro.EFFECTS[effect])
+
     def test_shuffle_bags_cover_ten_without_adjacent_repeats_or_mutation(self):
         import copy
         import random

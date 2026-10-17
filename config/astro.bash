@@ -7,6 +7,11 @@ if [[ $- == *i* && -n ${KITTY_WINDOW_ID-} ]]; then
     # shellcheck disable=SC1090
     [[ ! -r $_astro_prompt ]] || source "$_astro_prompt"
     unset _astro_prompt
+    # Capability-enabled tools such as nvtop (cap_perfmon) ignore user TERMINFO
+    # in glibc AT_SECURE mode and fail when xterm-kitty is only in Kitty's bundle.
+    if [[ ${TERM-} == xterm-kitty ]] && ! declare -F nvtop >/dev/null && ! alias nvtop >/dev/null 2>&1; then
+        nvtop() { TERM=xterm-256color command nvtop "$@"; }
+    fi
 fi
 if [[ $- == *i* && -z ${BASH_EXECUTION_STRING-} && -n ${KITTY_WINDOW_ID-} && ${ASTRO_GREETED_WINDOW-} != "$KITTY_WINDOW_ID" ]]; then
     # bash -ic command panes must start their agent/monitor without waiting.

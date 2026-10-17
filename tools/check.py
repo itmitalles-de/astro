@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
 TESTS='import unittest; r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover("tests")); raise SystemExit(not r.wasSuccessful())'
@@ -26,6 +27,24 @@ def check_whitespace():
         raise ValueError(result.stdout+result.stderr)
 
 
+def check_shell_sources(shellcheck):
+    # The lock-owning Python launcher executes this quoted shell body. Shell
+    # parsers otherwise see only a valid here-document, not the installed code.
+    source=(ROOT/'install.sh').read_text()
+    _,marker,body=source.partition("<<'ASTRO_INSTALL_BODY'\n")
+    body,end,_=body.partition('\nASTRO_INSTALL_BODY\n')
+    if not marker or not end:
+        raise ValueError('Cannot identify the executed installer shell body')
+    with tempfile.TemporaryDirectory(prefix='astro-shell-check-') as folder:
+        installer=Path(folder)/'astro-install-body.sh'
+        installer.write_text('#!/bin/sh\nset -eu\n'+body+'\n')
+        files=['install.sh','bin/astro',str(installer),'config/astro.bash','config/astro_prompt.bash']
+        for file in files[:3]:run(['/bin/sh','-n',file])
+        for file in files[3:]:run(['/bin/bash','-n',file])
+        if shellcheck:run([shellcheck,*files])
+        else:print('SKIP: ShellCheck is not installed',flush=True)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kitty',default=shutil.which('kitty'))
@@ -39,19 +58,16 @@ def main():
     for directory in ('config','tools','tests'):
         for path in sorted((ROOT/directory).glob('*.py')):
             compile(path.read_bytes(),str(path),'exec',dont_inherit=True)
-    for file in ('install.sh','bin/astro'):run(['/bin/sh','-n',file])
-    run(['/bin/bash','-n','config/astro.bash'])
-    run(['/bin/bash','-n','config/astro_prompt.bash'])
     shellcheck=shutil.which('shellcheck')
-    if shellcheck:
-        run([shellcheck,'install.sh','bin/astro','config/astro.bash','config/astro_prompt.bash'])
-    elif args.require_shellcheck:
+    if not shellcheck and args.require_shellcheck:
         parser.error('ShellCheck is required but not installed')
-    else:
-        print('SKIP: ShellCheck is not installed',flush=True)
+    check_shell_sources(shellcheck)
     env=dict(os.environ)
     env.pop('DISPLAY',None);env.pop('WAYLAND_DISPLAY',None)
     run([args.kitty,'+runpy',TESTS],env=env)
+    node=shutil.which('node')
+    site_tests=sorted((ROOT/'tests/site').glob('*.test.mjs'))
+    if node and site_tests:run([node,'--test',*map(str,site_tests)],env=env)
     if args.assets:run(['/usr/bin/python3',str(ROOT/'tools/check_assets.py')])
     if args.integration:
         command=[sys.executable,str(ROOT/'tools/smoke_test.py'),'--kitty',args.kitty]

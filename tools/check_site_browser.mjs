@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { checkAsciiScene } from './check_ascii_browser.mjs';
 
 const options = Object.fromEntries(process.argv.slice(2).reduce((pairs, item, i, args) =>
   i % 2 === 0 ? [...pairs, [item.replace(/^--/, ''), args[i + 1]]] : pairs, []));
@@ -16,6 +17,7 @@ const requests = new Set();
 const accessibility = [];
 const screenshots = [];
 let target;
+let animation;
 let ws;
 let commandId = 0;
 let loadCount = 0;
@@ -102,6 +104,9 @@ try {
   await navigate();
   check('English browser selects English and system dark', (await state()).lang === 'en' && (await state()).theme === 'dark');
   check('All real images load', await evaluate('[...document.images].every(img=>img.complete&&img.naturalWidth>0)'));
+  await until('document.querySelector("#ascii-scene")?.dataset.ready==="true"');
+  check('ASCII artwork initializes without replacing the real product capture', await evaluate('Boolean(document.querySelector("#ascii-scene[data-ready=true] canvas") && document.querySelector(".product img[data-alt=workspaceAlt]"))'));
+  animation = await checkAsciiScene({send,evaluate,until,check,navigate,click,target});
   check('Desktop headline fits the intended two-line composition', await evaluate('document.querySelector("h1").getBoundingClientRect().height < 200'));
   check('Normal split adds one pane', (await click('#split-right'), await paneCount()) === 4);
   check('Normal split preserves the initial right-hand pair', await evaluate(`document.querySelector('[data-pane="2"]').parentElement.parentElement.querySelector('[data-pane="3"]') !== null`));
@@ -117,6 +122,12 @@ try {
   await click('#reset-layout');
   await click('[data-pane="2"]');
   check('Pane selection keeps keyboard focus', await evaluate('document.activeElement.dataset.pane==="2" && document.activeElement.getAttribute("aria-pressed")==="true"'));
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+  check('Arrow key navigation moves selection and focus to the next pane', await evaluate('document.activeElement.dataset.pane==="3" && document.activeElement.getAttribute("aria-pressed")==="true"'));
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Home', code: 'Home', windowsVirtualKeyCode: 36 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Home', code: 'Home', windowsVirtualKeyCode: 36 });
+  check('Home key returns selection and focus to the first pane', await evaluate('document.activeElement.dataset.pane==="1" && document.activeElement.getAttribute("aria-pressed")==="true"'));
   await click('#reset-layout');
   await evaluate('document.querySelector("#language-toggle").focus()');
   await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', text: '\r', unmodifiedText: '\r', windowsVirtualKeyCode: 13 });
@@ -144,6 +155,7 @@ try {
   await click('#copy-install');
   await until('document.querySelector("#copy-status").textContent.includes("manuell")');
   check('Denied clipboard access selects commands with visible guidance', await evaluate('getSelection().toString()===document.querySelector("#install-commands").textContent && document.activeElement.id==="install-commands"'));
+  check('A denied quick recopy cannot retain an obsolete success label', await evaluate('document.querySelector("#copy-install").textContent==="Befehle kopieren"&&!document.querySelector("#copy-install").hasAttribute("aria-busy")'));
   await evaluate('getSelection().removeAllRanges(); document.querySelector("#copy-status").textContent=""; document.querySelector("#copy-install").textContent=document.documentElement.lang==="de"?"Befehle kopieren":"Copy commands"');
   await click('details:first-child summary');
   check('Native disclosure opens via its own control', await evaluate('document.querySelector("details").open'));
@@ -165,6 +177,7 @@ try {
           const result = await evaluate('axe.run(document,{runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"]}}).then(r=>({version:r.testEngine.version,violations:r.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary,checks:n.any,html:n.html}))})),incomplete:r.incomplete.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,html:n.html,checks:[...n.any,...n.all,...n.none]}))})),passes:r.passes.length}))');
           accessibility.push({ language, theme, width, ...result });
           check(`Axe WCAG A/AA: ${language}/${theme}/${width}`, result.violations.length === 0, result.violations);
+          check(`Axe has no unresolved manual checks: ${language}/${theme}/${width}`, result.incomplete.length === 0, result.incomplete);
         }
         if ((language === 'en' && theme === 'dark' && width === 1440) || (language === 'de' && theme === 'light' && width === 1440) || (language === 'de' && theme === 'dark' && width === 390) || (language === 'en' && theme === 'light' && width === 390)) {
           await screenshot(`site-${language}-${theme}-${width}.png`);
@@ -188,12 +201,12 @@ try {
   check('All requests stay on the site origin', [...requests].every(url => new URL(url).origin === new URL(options.url).origin), [...requests]);
   check('No broken HTTP resources', failures.length === 0, failures);
   check('No browser errors or CSP violations', errors.length === 0, errors);
-  console.log(JSON.stringify({ status: 'passed', assertions: checks.length, screenshots: screenshots.length, axe_scenarios: accessibility.length }, null, 2));
+  console.log(JSON.stringify({ status: 'passed', assertions: checks.length, screenshots: screenshots.length, axe_scenarios: accessibility.length, animation }, null, 2));
 } catch (error) {
   console.error(error.stack);
   process.exitCode = 1;
 } finally {
-  await fs.writeFile(path.join(output, 'browser-qa.json'), JSON.stringify({ status: process.exitCode ? 'failed' : 'passed', checks, errors, failures, requests: [...requests], accessibility, screenshots }, null, 2));
+  await fs.writeFile(path.join(output, 'browser-qa.json'), JSON.stringify({ status: process.exitCode ? 'failed' : 'passed', checks, errors, failures, requests: [...requests], accessibility, screenshots, animation }, null, 2));
   if (ws?.readyState === WebSocket.OPEN && target) {
     try { await send('Target.closeTarget', { targetId: target.id }); } catch {}
     ws.close();

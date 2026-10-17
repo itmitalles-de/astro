@@ -20,6 +20,62 @@ def load_clipboard():
 
 
 class ClipboardLimitTests(unittest.TestCase):
+    def test_producer_descendants_are_killed_even_after_the_leader_exits(self):
+        import ctypes
+        import signal
+        libc=ctypes.CDLL(None,use_errno=True)
+        previous=ctypes.c_int()
+        self.assertEqual(libc.prctl(37,ctypes.byref(previous),0,0,0),0)
+        self.assertEqual(libc.prctl(36,1,0,0,0),0)
+        module=load_clipboard()
+        executable=shutil.which('python3');assert executable is not None
+        try:
+            for mode in ('alive','exited','oversize'):
+                with self.subTest(mode=mode),tempfile.TemporaryDirectory() as folder:
+                    pidfile=Path(folder)/'child.pid'
+                    code='''import subprocess,sys,time
+from pathlib import Path
+p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])
+Path(sys.argv[1]).write_text(str(p.pid))
+if sys.argv[2]=='exited': raise SystemExit(0)
+if sys.argv[2]=='oversize': sys.stdout.buffer.write(b'x'*4096); sys.stdout.buffer.flush()
+time.sleep(30)
+'''
+                    processes=[]
+                    original=subprocess.Popen
+                    def launch(*args,**kwargs):
+                        process=original(*args,**kwargs);processes.append(process);return process
+                    try:
+                        with patch.object(module.subprocess,'Popen',side_effect=launch),patch.object(module.os,'killpg',wraps=os.killpg) as kill_group:
+                            error=ValueError if mode=='oversize' else subprocess.TimeoutExpired
+                            with self.assertRaises(error):
+                                module.read_bounded([executable,'-c',code,str(pidfile),mode],128,.3)
+                        child=int(pidfile.read_text())
+                        deadline=time.monotonic()+1
+                        alive=True
+                        while time.monotonic()<deadline:
+                            try: alive=Path(f'/proc/{child}/stat').read_text().rsplit(')',1)[1].split()[0]!='Z'
+                            except FileNotFoundError: alive=False
+                            if not alive: break
+                            time.sleep(.01)
+                        self.assertFalse(alive,'clipboard producer descendant survived cleanup')
+                        self.assertTrue(kill_group.called)
+                        self.assertTrue(all(call.args[0]==processes[0].pid for call in kill_group.call_args_list))
+                        self.assertNotEqual(processes[0].pid,os.getpgrp())
+                        self.assertIsNotNone(processes[0].poll(),'direct producer must be reaped')
+                    finally:
+                        if pidfile.exists():
+                            child=int(pidfile.read_text())
+                            try: os.kill(child,signal.SIGKILL)
+                            except ProcessLookupError: pass
+                            try: os.waitpid(child,0)
+                            except ChildProcessError: pass # Kitty may already have reaped it.
+                        for process in processes:
+                            if process.poll() is None:
+                                os.killpg(process.pid,signal.SIGKILL);process.wait()
+        finally:
+            self.assertEqual(libc.prctl(36,previous.value,0,0,0),0)
+
     def test_close_failure_removes_the_incomplete_saved_file(self):
         from contextlib import contextmanager
         module=load_clipboard()

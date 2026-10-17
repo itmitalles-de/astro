@@ -80,6 +80,10 @@ _MESSAGES = {
         "de": "Noch kein Shell-Befehl erkannt. Bitte einen Befehl mit aktiver Kitty-Shell-Integration ausführen.",
         "en": "No shell command detected yet. Run a command with kitty shell integration active.",
     },
+    "equalize_unavailable": {
+        "de": "Gleiche Größen sind in dieser Aufteilung ohne Änderung anderer Bereiche oder Unterschreitung einer Terminalzelle nicht möglich. Aufteilung unverändert.",
+        "en": "Cannot equalize these panes in this split layout while preserving other panes and at least one terminal cell. Layout unchanged.",
+    },
     "shortcuts_title": {"de": "Tastenkürzel · Esc schließen", "en": "Keyboard shortcuts · Esc closes"},
 }
 
@@ -191,12 +195,13 @@ def _agent_title(window: Any, title: str, state: dict[str, Any]) -> tuple[str | 
     cached = cache.get(window.id)
     if cached is not None and cached[1] == title and now - cached[0] < _AGENT_CACHE_SECONDS:
         return cached[2], cached[3]
-    agent, shown = _detect_agent(window), title
-    if agent == "agy":
-        shown = _agy_session_title(window) or title
+    agent = _detect_agent(window)
+    agy_title = _agy_session_title(window) if agent == "agy" else None
+    shown = agy_title or title
     if agent is not None:
-        # Drop spinners and status glyphs that agents put in front of titles.
-        shown = _LEADING_SYMBOLS.sub("", shown).strip()
+        # Drop spinners and status glyphs that agents put in front of OSC titles.
+        if agy_title is None:
+            shown = _LEADING_SYMBOLS.sub("", shown).strip()
         defaults = {"claude": ("claude", "claude code"), "codex": ("codex",),
                     "hermes": ("hermes", "hermes agent"), "agy": ("agy",)}
         if shown.lower() in defaults[agent]:
@@ -230,6 +235,7 @@ def _agy_session_title(window: Any) -> str | None:
     """
     import json
     import os
+    import stat
 
     try:
         pgrp = os.tcgetpgrp(window.child.child_fd)
@@ -248,7 +254,11 @@ def _agy_session_title(window: Any) -> str | None:
                         or not _UUID.fullmatch(session)
                         or os.path.basename(root) != "antigravity-cli"):
                     continue
-                with open(os.path.join(root, "annotations", session + ".pbtxt")) as f:
+                path = os.path.join(root, "annotations", session + ".pbtxt")
+                fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_CLOEXEC | os.O_NOFOLLOW)
+                with os.fdopen(fd, encoding="utf-8", errors="replace") as f:
+                    if not stat.S_ISREG(os.fstat(f.fileno()).st_mode):
+                        continue
                     annotation = f.read(16384)
                 match = re.search(r'^\s*title\s*:\s*("(?:[^"\\]|\\.)*")', annotation, re.M)
                 if match:
@@ -273,10 +283,13 @@ def _scan_agents(boss: Any, state: dict[str, Any]) -> set[int]:
         for group in tab.windows.iter_all_layoutable_groups(only_visible=True):
             for window in group.windows:
                 cached = cache.get(window.id)
-                if cached is not None and cached[2] != _detect_agent(window):
+                if cached is None:
+                    continue
+                agent = _detect_agent(window)
+                if cached[2] != agent:
                     del cache[window.id]
                     changed.add(window.id)
-                elif cached is not None and cached[2] == "agy":
+                elif agent == "agy":
                     # /rename changes the annotation, not the terminal title.
                     del cache[window.id]
                     if _agent_title(window, cached[1], state)[1] != cached[3]:
@@ -735,10 +748,21 @@ def _equalize_group(boss: Any, window: Any, horizontal: bool) -> None:
     root = tab.current_layout.pairs_root
     groups = getattr(boss, _STATE_ATTR)["groups"]
     wanted = groups.get(window.id)
-    members = set()
-    for group in tab.windows.iter_all_layoutable_groups():
-        if wanted is None or any(groups.get(w.id) == wanted for w in group.windows):
-            members.add(group.id)
+    panes = {group.id: group for group in tab.windows.iter_all_layoutable_groups()}
+    members = {group.id for group in panes.values()
+               if wanted is None or any(groups.get(w.id) == wanted for w in group.windows)}
+    if len(members) < 2:
+        return
+    # lgd is shared by all OS windows, which can have different font grids.
+    tab.current_layout._set_dimensions(tab.windows)
+    cell = lgd.cell_width if horizontal else lgd.cell_height
+    sides = ("left", "right") if horizontal else ("top", "bottom")
+    border_mult = 0 if lgd.draw_minimal_borders else 1
+    decorations = {wid: sum(group.decoration(side, border_mult=border_mult) for side in sides)
+                   for wid, group in panes.items()}
+    current_cells = {wid: ((group.geometry.right - group.geometry.left) if horizontal else
+                           (group.geometry.bottom - group.geometry.top)) // cell
+                     for wid, group in panes.items()}
 
     def extent(pair: Any, first: bool) -> int:
         edges = pair.first_extent if first else pair.second_extent
@@ -747,54 +771,79 @@ def _equalize_group(boss: Any, window: Any, horizontal: bool) -> None:
     def size(pair: Any) -> int:
         return pair.width if horizontal else pair.height
 
-    def measure(node: Any, current: int) -> tuple[int, int]:
-        """Return (member units, fixed pixels) of a subtree along the axis."""
+    bounds: dict[Any, tuple[int, int]] = {}
+
+    def measure(node: Any, cells: int, rounding: int) -> tuple[int, int] | None:
+        """Feasible pixel spans, preserving every outside pane's cell count."""
         if node is None:
             return 0, 0
         if not isinstance(node, Pair):
-            return (1, 0) if node in members else (0, current)
-        if node.one is None or node.two is None:
-            return measure(node.one or node.two, current)
-        one = measure(node.one, extent(node, True))
-        two = measure(node.two, extent(node, False))
-        if node.horizontal == horizontal:
-            return one[0] + two[0], one[1] + two[1] + 2 * node.border_width
-        if one[0] == two[0] == 0:
-            return 0, current
-        # Stacked across the axis: both children share one extent.
-        return max(one, two)
+            count = cells if node in members else current_cells[node]
+            if count < 1:
+                return None
+            extra = rounding if node in members else 0
+            span = (decorations[node] + count * cell,
+                    decorations[node] + (count + extra + 1) * cell - 1)
+        elif node.one is None or node.two is None:
+            span = measure(node.one if node.one is not None else node.two, cells, rounding)
+        else:
+            one = measure(node.one, cells, rounding)
+            two = measure(node.two, cells, rounding)
+            if one is None or two is None:
+                return None
+            if node.horizontal == horizontal:
+                border = 2 * node.border_width
+                span = one[0] + two[0] + border, one[1] + two[1] + border
+            else:
+                # Both branches share the same span: keep BOTH constraints,
+                # including outsiders in an otherwise grouped subtree.
+                span = max(one[0], two[0]), min(one[1], two[1])
+        if span is None or span[0] > span[1]:
+            return None
+        bounds[node] = span
+        return span
 
-    def assign(node: Any, target: int) -> None:
+    def plan(node: Any, target: int, changes: list[tuple[Any, float]]) -> None:
         if not isinstance(node, Pair):
             return
         if node.one is None or node.two is None:
-            assign(node.one or node.two, target)
+            plan(node.one if node.one is not None else node.two, target, changes)
             return
         if node.horizontal != horizontal:
-            assign(node.one, target)
-            assign(node.two, target)
+            plan(node.one, target, changes)
+            plan(node.two, target, changes)
             return
-        units, fixed = measure(node, target)
-        if units == 0:
-            return
-        one_units, one_fixed = measure(node.one, extent(node, True))
-        unit = (target - fixed) / units
-        first = round(one_units * unit + one_fixed)
         bw = node.border_width
-        cell = lgd.cell_width if horizontal else lgd.cell_height
-        if unit < cell or first < cell or target - first - 2 * bw < cell:
-            # Nested splits can ask for more than the space allows (members
-            # stacked across the axis need different sizes); keep this split.
-            return
-        # layout_pair gives the first child int(bias * size) - border pixels.
-        # The parent assigns this pair `target` pixels in the next layout.
-        if target > 0:
-            node.bias = min(0.95, max(0.05, (first + bw + 0.5) / target))
-        assign(node.one, first)
-        assign(node.two, target - first - 2 * bw)
+        one, two = bounds[node.one], bounds[node.two]
+        lower = max(one[0], target - 2 * bw - two[1])
+        upper = min(one[1], target - 2 * bw - two[0])
+        first = min(upper, max(lower, extent(node, True)))
+        if first != extent(node, True) or target != size(node):
+            # Native layout_pair uses int(bias * size) - border pixels.
+            changes.append((node, (first + bw + 0.5) / target))
+        plan(node.one, first, changes)
+        plan(node.two, target - first - 2 * bw, changes)
 
-    assign(root, size(root))
-    tab.relayout()
+    target = size(root)
+    preferred = sum(current_cells[wid] for wid in members) / len(members)
+    candidates = sorted(range(1, target // cell + 1), key=lambda count: abs(count - preferred))
+    # Prefer identical cell counts; permit one cell of unavoidable rounding.
+    # Search is bounded by the current screen's cell count, not scrollback.
+    for rounding in (0, 1):
+        for cells in candidates:
+            bounds.clear()
+            span = measure(root, cells, rounding)
+            if span is None or not span[0] <= target <= span[1]:
+                continue
+            changes: list[tuple[Any, float]] = []
+            plan(root, target, changes)
+            # Validate the entire tree before changing any live bias.
+            for node, bias in changes:
+                node.bias = bias
+            if changes:
+                tab.relayout()
+            return
+    raise RuntimeError(_message("equalize_unavailable"))
 
 
 def _copy_command(window: Any) -> None:

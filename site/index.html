@@ -17,6 +17,7 @@
   <link rel="preload" href="assets/fonts/chivo-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script src="preferences.js"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="ascii.css">
   <script type="module" src="app.mjs"></script>
   <title>Astro — quiet company, sharp tools</title>
 </head>
@@ -33,6 +34,21 @@
   <main id="main">
     <section class="hero wrap" id="top" aria-labelledby="hero-title">
       <div class="hero-heading"><h1 id="hero-title"><span data-i18n="hero1">Your terminal.</span><span data-i18n="hero2">In good company.</span></h1><div class="hero-copy"><p data-i18n="intro">A calmer home for your shells, projects and AI agents. Built on Kitty, with thoughtful pane controls and a one-eyed cat called Astro.</p><div class="hero-actions"><a class="button primary" href="#install" data-i18n="installAction">Install Astro</a><a class="source-link" href="https://github.com/itmitalles-de/astro" data-i18n="sourceAction">Explore the source <span aria-hidden="true">↗</span></a></div></div></div>
+      <figure class="ascii-art" id="ascii-art">
+        <div class="ascii-field" id="ascii-scene" role="img" data-aria="asciiDescription" aria-label="An ASCII portrait of Astro in stardust. The only open green eye is on the viewer's right; the left eye is closed.">
+          <canvas id="ascii-canvas" aria-hidden="true"></canvas>
+          <pre class="ascii-fallback" aria-hidden="true">    /\           /\
+   /::\_________/::\
+  /:::::::::::::::::\
+  |:::: -     <span class="ascii-eye">@</span> ::::|
+  \::::::::v::::::::/
+   \:::|       |:::/
+    \_/\_______/\_/
+        \:::::/
+         \___/</pre>
+        </div>
+        <figcaption class="ascii-caption"><span data-i18n="asciiTitle">Astro, made of characters.</span><div class="ascii-controls" id="ascii-controls" hidden><button id="ascii-pause" type="button" aria-controls="ascii-scene" aria-pressed="false" data-i18n="asciiPause">Pause</button><button id="ascii-scatter" type="button" aria-controls="ascii-scene" data-i18n="asciiScatter">Scatter stars</button></div></figcaption>
+      </figure>
       <div class="product-meta"><span><span class="status-dot" aria-hidden="true"></span><span data-i18n="productType">A real terminal. Your own tools.</span></span><span class="product-platform">Linux <span aria-hidden="true">/</span> Kitty 0.49.2 <span aria-hidden="true">/</span> GPLv3+</span></div>
       <figure class="product"><a href="assets/workspace.png" aria-label="Open the full-size Astro screenshot" data-aria="fullImage"><img src="assets/workspace.png" width="1440" height="760" fetchpriority="high" alt="Actual Astro terminal with three panes, native title-bar controls and the purple, grey and gold Bash prompt. Example workspace content." data-alt="workspaceAlt"></a><figcaption><span data-i18n="captureCaption">Captured in Astro. A simplified example workspace, not a mockup. See Install for the default session.</span><span class="signature">quiet company. sharp tools.</span></figcaption></figure>
     </section>
@@ -50,7 +66,7 @@
         </div>
       </div>
       <div class="feature-pair">
-        <article><div class="feature-glyph" aria-hidden="true">›_</div><h3 data-i18n="agentsTitle">Your agents. Not a walled garden.</h3><p data-i18n="agentsBody">Astro recognizes panes running Claude Code, Codex or Hermes and gives each one a clear title badge. Run them alongside ordinary shells, logs and monitors. Their tools and subscriptions stay yours.</p><p class="feature-footnote" data-i18n="agentsNote">Agent CLIs are installed separately. Astro isn't an agent service.</p></article>
+        <article><div class="feature-glyph" aria-hidden="true">›_</div><h3 data-i18n="agentsTitle">Your agents. Not a walled garden.</h3><p data-i18n="agentsBody">Astro recognizes panes running Claude Code, Codex, Hermes or agy and gives each one a clear title badge and session label. Run them alongside ordinary shells, logs and monitors. Their tools and subscriptions stay yours.</p><p class="feature-footnote" data-i18n="agentsNote">Agent CLIs are installed separately. Astro isn't an agent service.</p></article>
         <article><div class="feature-glyph clipboard-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" focusable="false"><rect x="8" y="8" width="12" height="13" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 4H4v13" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><h3 data-i18n="clipboardTitle">From screenshot to conversation.</h3><p data-i18n="clipboardBody">Right-click a copied PNG to paste its private file path into the clicked pane. Copy command output from the title bar, or middle-click to paste the primary selection. Less switching, less hunting for context.</p><p class="feature-footnote" data-i18n="clipboardNote">Image paths remain on your machine. Your CLI decides what to do with them.</p></article>
       </div>
       <div class="small-details"><span data-i18n="detail1">Pane groups &amp; equal sizing</span><span data-i18n="detail2">Bash shell integration</span><span data-i18n="detail3">Quiet GNOME Soft colors</span><span data-i18n="detail4">A small cat greeting</span></div>
@@ -66,7 +82,7 @@ cd astro
     </div></section>
 
     <section class="faq wrap" aria-labelledby="faq-title"><div><p class="section-kicker" data-i18n="detailsKicker">A few useful details</p><h2 id="faq-title" data-i18n="faqTitle">Still your terminal.</h2><p class="faq-intro" data-i18n="faqIntro">No new shell to learn. No account to create for Astro. Just a small open-source layer on a terminal we already like.</p></div><div class="faq-list">
-      <details><summary data-i18n="faq1q">Does it work on a Wayland desktop?</summary><p data-i18n="faq1a">Yes, with Kitty running through XWayland, as configured by Astro. Native Wayland without XWayland hasn't been verified yet. This is separate from the desktop session itself being Wayland.</p><a href="https://github.com/itmitalles-de/astro/issues/1" data-i18n="waylandIssue">Follow native Wayland testing</a></details>
+      <details><summary data-i18n="faq1q">Does it work on a Wayland desktop?</summary><p data-i18n="faq1a">Yes. Astro defaults to X11/XWayland. Native Wayland passed isolated headless Sway tests with Kitty 0.49.2; hover hints remain X11-only. Real GNOME/KDE desktops and physical hardware have not been verified.</p><a href="https://github.com/itmitalles-de/astro/issues/1" data-i18n="waylandIssue">Read the native Wayland test results</a></details>
       <details><summary data-i18n="faq2q">What about my existing configuration?</summary><p data-i18n="faq2a">Replaced files go into a private timestamped backup next to the Kitty configuration. The installer preserves your session layout on upgrades. You can inspect every setting and use only the parts you want; check the README before installing.</p></details>
       <details><summary data-i18n="faq3q">What does Astro change about the clipboard?</summary><p data-i18n="faq3a">At app startup, the launcher puts /resume into both clipboard selections. New panes don't repeat that. Programs inside Astro may read the normal clipboard without asking, including remote programs over SSH. Only run trusted software when your clipboard holds sensitive data. PNG files are saved privately and aren't automatically deleted.</p></details>
       <details><summary data-i18n="faq4q">Can I turn the greeting or prompt off?</summary><p data-i18n="faq4a">Yes. Set ASTRO_ANIMATION=off to disable the greeting or ASTRO_PROMPT=off to keep your own prompt. REDUCE_MOTION=1 also disables the greeting. The underlying shell and Kitty remain yours.</p></details>

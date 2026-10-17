@@ -23,13 +23,18 @@ bar. GNOME palette colors connect the frame and wordmark to the terminal;
 the cat retains its natural fur and eye colors.
 Reference photographs are personal and are not distributed in this repository.
 
-New Bash terminal panes greet you with a short CPU-only ASCII animation:
-First contact, Tabby rain, Constellation, Orbital cat, Cat nap, Zoomies,
-Purr waves, Yarn physics, Whisker radar or Stardust. A persistent shuffle bag
-shows all ten before repeating, including when several panes open together.
-The greeting lasts at most
-1.25 seconds, disappears without adding scrollback, and stops as soon as you
-type; your input is left in the terminal queue for the shell. Descendant Bash
+New Bash terminal panes greet you with an animated cat action: First contact,
+Cursor hunt, Star jump, Tail chase, Cat nap, Zoomies, Grooming, Yarn physics,
+Box inspector or Window watch. Each has its own articulated poses and props,
+not the same portrait with different particles. Zoomies retains its original
+running sprite and motion. A persistent shuffle bag shows all ten before repeating,
+including when several panes open together. The selected action loops until you
+start typing; there is no automatic dismissal timer. The first input is left in
+its terminal queue for the shell. Rendering updates only changed rows at 12 fps.
+Cycle coordination is best effort: an unavailable/unsafe cache or a lock held
+for more than 200 ms selects a random action instead of waiting indefinitely
+for another pane. Cache symlinks and non-regular files are not followed.
+The greeting adds no scrollback. Descendant Bash
 shells skip the greeting in the same pane. Command shells such as `bash -ic`
 start their agent or monitor immediately; their greeting waits until a real
 interactive prompt is opened. Direct non-shell command launches,
@@ -56,8 +61,12 @@ purple username (`#a76fc1`), grey `@` and colon (`#9a968f`), golden hostname
 the GNOME Soft ANSI palette and the neutral `#191919` background.
 This is scoped to interactive Kitty Bash sessions; other terminals
 are unchanged. Readline wrapping and kitty's native shell integration remain
-intact. Set `ASTRO_PROMPT=off` to keep your existing prompt; `NO_COLOR` or a dumb
-terminal selects a plain prompt. To update an already open Bash shell, run:
+intact. In interactive Kitty shells where `TERM` is `xterm-kitty`, Astro also
+defines a lightweight `nvtop` wrapper (`TERM=xterm-256color`) unless you already
+define `nvtop`, so capability-enabled `nvtop` binaries (`cap_perfmon`) work when
+`xterm-kitty` is not installed in system-wide terminfo. Set `ASTRO_PROMPT=off`
+to keep your existing prompt; `NO_COLOR` or a dumb terminal selects a plain
+prompt. To update an already open Bash shell, run:
 
 ```sh
 source ~/.config/kitty/astro_prompt.bash
@@ -92,7 +101,9 @@ so native-pointer fixes take effect without restarting the terminal.
 
 - **Groups:** equalizing changes only the panes of the clicked pane's group;
   every other pane keeps its size. On an ungrouped pane the buttons equalize
-  the whole tab along that axis only.
+  the whole tab along that axis only. Some nested or mixed-size groups cannot
+  be equalized without resizing other panes; Astro leaves the layout untouched
+  and explains why rather than applying a partial change.
 - **Folding:** when the title would otherwise be cut, all controls except close
   fold behind `‹`. Click it to unfold; the controls stay open until you click
   the fold button again. Moving the pointer away does not close them.
@@ -105,9 +116,10 @@ so native-pointer fixes take effect without restarting the terminal.
 - Panes running `claude`, `codex` or `hermes` get a neutral GNOME-colored badge
   (✻ Claude, ›_ Codex, ☤ Hermes). Codex session ids give way to the working
   directory.
-- `agy` panes show their session's `/rename` title. Astro reads only the title
-  annotation associated with that process's open presence lock; renames refresh
-  within two seconds, including when several sessions share a directory.
+- `agy` panes show their session's `/rename` title. Astro reads only the regular
+  title annotation file associated with that process's open presence lock;
+  renames refresh within two seconds, including when several sessions share a
+  directory.
 - A red dot marks a pane whose program rang the bell (an agent finished or
   waits for input); `•` marks background output since the pane last had focus.
 
@@ -142,6 +154,8 @@ PNG reads are limited to 64 MiB while streaming, with a five-second deadline;
 oversized payloads, data without a PNG signature or unavailable clipboard owners
 fall back to native clipboard text.
 An incomplete file is removed if writing or closing it fails.
+Clipboard producer process groups are terminated on completion or failure, so
+a wrapper's background pipe owner cannot outlive a completed PNG read.
 
 Terminal programs may read the normal system clipboard without a permission
 dialog (`clipboard_control ... read-clipboard`). This also includes programs
@@ -174,6 +188,10 @@ and layout proportions. It starts no real agent CLIs and touches no desktop
 clipboard. GitHub Actions configures the same checks with a checksum-pinned Kitty
 0.49.2 binary and a commit-pinned checkout action.
 Whitespace checks cover all tracked source, including in a clean CI checkout.
+Shell syntax and ShellCheck also inspect the installer body actually executed
+by the lock-owning launcher, not just its outer here-document wrapper. Website
+artifact, native/diagram parity and Node website unit tests run automatically
+when Node.js is available; see [docs/website.md](docs/website.md) for browser QA.
 
 To run only the unit suite directly:
 
@@ -183,14 +201,17 @@ kitty +runpy 'import unittest; r = unittest.TextTestRunner(verbosity=2).run(unit
 
 ## Requirements
 
-- Python **3.10+** and Bash for the optional startup greetings; the renderer
-  uses only the standard library and does not use the GPU.
+- Python **3.10+** for installation and the optional startup greetings, plus Bash;
+  the renderer uses only the standard library and does not use the GPU.
 - kitty **0.49.2**. The title-bar mouse handler, `Window._title_bar_screen`
   and the splits layout internals are not public APIs; check Astro after every
   kitty upgrade.
 - Linux with kitty on X11 (`linux_display_server x11`, also under Xwayland).
-  Native Wayland is not yet verified; see [issue #1](https://github.com/itmitalles-de/astro/issues/1).
-  Hover hints use checked XCB queries so a stale X11 ID cannot terminate Kitty.
+  An isolated native Wayland run with headless Sway and Kitty 0.49.2 verified
+  controls, splits, reload, clipboard and dummy-agent badges; [issue #1](https://github.com/itmitalles-de/astro/issues/1)
+  records that bounded result. This does not verify real GNOME/KDE desktops,
+  decorations or a GPU/hardware matrix. Hover hints remain X11-only.
+  On X11, hover hints use checked XCB queries so a stale ID cannot terminate Kitty.
 - Optional: Python 3 with [fontTools](https://github.com/fonttools/fonttools)
   to rebuild the icon font.
 
@@ -211,8 +232,16 @@ does not modify other terminal emulators. Source files and Bash hook markers are
 validated before replacing user files, including write access when the hook needs
 an update. An already-current read-only hook requires no write. The update is atomic and preserves
 managed-dotfile symlinks, existing permissions and unrelated line endings.
-Backup directories are private (0700); failures after installation starts print
-their backup location. This is not a full transactional rollback for disk errors.
+Installation locks reject concurrent runs sharing configuration, data or launcher
+directories and the managed Bash hook. Concurrent hook edits are detected before
+replacement. Output destinations are checked before installed files are replaced;
+outputs must not overwrite the source checkout, including through a symlinked
+parent directory or an `ASTRO_BASHRC` target inside the checkout.
+Backup directories are private (0700); failures after installation starts remove
+any half-written destination file, print the backup location and show the exact
+`./install.sh --restore BACKUP_DIR` command to restore backed-up files, symlinks
+and `.bashrc`. This is a bounded restore mechanism, not a full filesystem CAS or
+power-loss transaction.
 
 **Upgrades preserve `sessions/default.conf`**, including your personal pane layout.
 The sample workspace is only copied on first installation. To deliberately reset
@@ -220,13 +249,21 @@ it to the sample, use `ASTRO_REPLACE_SESSION=1 ./install.sh`; the previous sessi
 is backed up first. No running panes are closed. For a staged
 install, set `KITTY_CONFIG_DIRECTORY`, `XDG_DATA_HOME`, `ASTRO_BIN_DIRECTORY`
 and `ASTRO_BASHRC` to staging paths.
+`./install.sh --help` only prints help; unknown arguments fail without installing.
 
 Open **Astro** from the application launcher, or run `astro`. At each app
 start, the launcher copies the literal `/resume` (without a newline) into the
 clipboard and primary selection. Opening another pane or tab does not overwrite
-the clipboard again. `astro --help` and `astro --version` do not change either selection.
+the clipboard again. Kitty informational options, including help, version and
+debugging output, its `@` / `+` command modes, and unsupported `-c`/`-o`
+short-option cluster prefixes (which trigger a native parser crash in Kitty
+0.49.2) bypass clipboard initialization and are passed through unchanged.
+Info-looking text used as another option's value does not turn an ordinary
+launch into an informational invocation.
 Each clipboard command has a two-second deadline (override with
-`ASTRO_CLIPBOARD_TIMEOUT`); missing GNU `timeout` skips initialization instead of
+`ASTRO_CLIPBOARD_TIMEOUT`, positive decimal seconds up to 30 with at most six
+fractional digits and an optional `s`). An invalid override skips initialization;
+missing GNU `timeout` skips initialization instead of
 running an unbounded helper. Clipboard failure never prevents the terminal from opening.
 New Kitty processes use `kitty.app.png` as their window icon. Existing processes may
 need a restart before their icon changes; no running sessions are closed by

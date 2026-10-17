@@ -52,8 +52,18 @@ class AgyTitleTests(unittest.TestCase):
                 self.assertIsNone(bar._agy_session_title(window))
                 annotation.write_text('title:"unfinished')
                 self.assertIsNone(bar._agy_session_title(window))
-                annotation.write_text('title:' + json.dumps('MONTU\n\x1b'))
+                annotation.write_bytes(b'raw: "\xff"\ntitle: "MONTU\\n\\u001b"\n')
                 self.assertEqual(bar._agy_session_title(window), 'MONTU')
+                annotation.unlink()
+                os.mkfifo(annotation)
+                self.assertIsNone(bar._agy_session_title(window))
+
+    def test_explicit_rename_punctuation_is_preserved_while_osc_spinners_are_stripped(self):
+        window = SimpleNamespace(id=1, child=SimpleNamespace(child_fd=10))
+        with patch.object(bar, '_detect_agent', return_value='agy'), patch.object(bar, '_agy_session_title', return_value='[#42] Release'):
+            self.assertEqual(bar._agent_title(window, '⠋ agy', {}), ('agy', '[#42] Release'))
+        with patch.object(bar, '_detect_agent', return_value='agy'), patch.object(bar, '_agy_session_title', return_value=None):
+            self.assertEqual(bar._agent_title(window, '⠋ Working', {}), ('agy', 'Working'))
 
     def test_rename_and_session_switch_refresh_without_an_osc_title_change(self):
         window = SimpleNamespace(id=1)

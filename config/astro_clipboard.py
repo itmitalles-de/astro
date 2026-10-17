@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import select
 import shlex
+import signal
 import subprocess
 import tempfile
 import time
@@ -36,9 +37,15 @@ def read_bounded(command: list[str], limit: int, timeout: float) -> bytes:
                 raise ValueError('Clipboard output exceeds the size limit')
     finally:
         process.stdout.close()
-        if process.poll() is None:
-            process.kill()
-        process.wait(timeout=1)
+        try:
+            # start_new_session makes this PID the private process-group ID.
+            # Its descendants may retain stdout after the leader has exited.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        finally:
+            process.wait(timeout=1)
 
 
 def clipboard_image() -> str:

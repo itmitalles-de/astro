@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import struct
 import sys
+import zlib
 from urllib.parse import unquote, urlsplit
 
 DOMAIN = 'https://astro.wutz.io/'
@@ -27,8 +28,41 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def png_dimensions(data):
+    """Check PNG framing and chunk CRCs; browser QA verifies image decoding."""
+    require(data[:8] == b'\x89PNG\r\n\x1a\n', 'Product capture must be a real PNG')
+    offset, dimensions, image_data = 8, None, False
+    while offset < len(data):
+        require(offset + 12 <= len(data), 'Truncated PNG chunk')
+        length = struct.unpack('>I', data[offset:offset + 4])[0]
+        end = offset + length + 12
+        require(end <= len(data), 'Truncated PNG chunk payload')
+        kind = data[offset + 4:offset + 8]
+        payload = data[offset + 8:end - 4]
+        checksum = struct.unpack('>I', data[end - 4:end])[0]
+        require(zlib.crc32(kind + payload) == checksum, 'Corrupt PNG chunk checksum')
+        require(dimensions is not None or kind == b'IHDR', 'PNG must start with IHDR')
+        if kind == b'IHDR':
+            require(dimensions is None and length == 13, 'Invalid PNG IHDR')
+            dimensions = struct.unpack('>II', payload[:8])
+            require(all(dimensions), 'Invalid PNG dimensions')
+        elif kind == b'IDAT':
+            image_data = image_data or bool(length)
+        elif kind == b'IEND':
+            if dimensions is None or length != 0 or end != len(data) or not image_data:
+                raise ValueError('Incomplete PNG image')
+            return dimensions
+        offset = end
+    raise ValueError('PNG is missing its end marker')
+
+
 def check(site):
     site = site.resolve()
+    # Pages archives dereference symlinks, including files not linked by HTML.
+    # Validate the entire boundary before reading CSS/module contents.
+    for entry in site.rglob('*'):
+        require(entry.resolve().is_relative_to(site), f'Asset escapes the artifact: {entry.relative_to(site)}')
+        require(entry.is_dir() or entry.is_file(), f'Non-regular artifact entry: {entry.relative_to(site)}')
     html = (site / 'index.html').read_text()
     document = Document(html)
     ids = [attrs['id'] for _, attrs in document.elements if 'id' in attrs]
@@ -57,12 +91,15 @@ def check(site):
             require('alt' in attrs, 'Image is missing alt text')
             require('width' in attrs and 'height' in attrs, 'Image dimensions are required')
         if tag in ('link', 'a') and 'href' in attrs:
+            if tag == 'link' and set(attrs.get('rel', '').split()) & {'stylesheet', 'icon', 'preload', 'manifest'}:
+                url = urlsplit(attrs['href'])
+                require(not url.scheme and not url.netloc, 'link must be self-hosted')
             local_asset(attrs['href'])
     for css in site.rglob('*.css'):
         for reference in re.findall(r'url\([\'"]?([^\)\'"\s]+)', css.read_text()):
             local_asset(reference, css.parent)
-    for script in site.rglob('*.mjs'):
-        for reference in re.findall(r"(?:from\s*|import\s*)['\"]([^'\"]+)['\"]", script.read_text()):
+    for script in [*site.rglob('*.mjs'), *site.rglob('*.js')]:
+        for reference in re.findall(r"\b(?:from\s*|import\s*(?:\(\s*)?)['\"]([^'\"]+)['\"]", script.read_text()):
             require(reference.startswith('./'), f'Unbundled external module: {reference}')
             local_asset(reference, script.parent)
     meta = {attrs.get('property', attrs.get('name', attrs.get('http-equiv'))): attrs.get('content', '')
@@ -74,16 +111,29 @@ def check(site):
     require(meta.get('og:image', '').startswith(DOMAIN), 'Open Graph image must belong to this site')
     local_asset(meta['og:image'].removeprefix(DOMAIN))
     csp = meta.get('Content-Security-Policy', '')
-    for directive in ("default-src 'self'", "script-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'none'"):
-        require(directive in csp, f'Missing CSP directive: {directive}')
+    policy = {}
+    for segment in csp.split(';'):
+        tokens = segment.split()
+        if tokens:
+            directive = tokens[0].lower()
+            require(directive not in policy, f'Duplicate CSP directive: {directive}')
+            policy[directive] = set(tokens[1:])
+    expected_policy = {
+        'default-src': {"'self'"}, 'script-src': {"'self'"},
+        'style-src': {"'self'"}, 'img-src': {"'self'", 'data:'},
+        'font-src': {"'self'"}, 'media-src': {"'self'"},
+        'object-src': {"'none'"}, 'base-uri': {"'self'"},
+        'form-action': {"'none'"},
+    }
+    for directive, sources in expected_policy.items():
+        require(policy.get(directive) == sources, f'CSP source policy changed: {directive}')
     require('unsafe-inline' not in csp and 'unsafe-eval' not in csp, 'CSP must not allow inline/eval scripts')
     require((site / 'CNAME').read_text().strip() == 'astro.wutz.io', 'Wrong Pages custom domain')
     require((site / '.nojekyll').is_file(), 'Missing .nojekyll')
     require(DOMAIN + 'sitemap.xml' in (site / 'robots.txt').read_text(), 'Wrong robots sitemap URL')
     require(f'<loc>{DOMAIN}</loc>' in (site / 'sitemap.xml').read_text(), 'Wrong sitemap URL')
     png = (site / 'assets/workspace.png').read_bytes()
-    require(png[:8] == b'\x89PNG\r\n\x1a\n', 'Product capture must be a real PNG')
-    dimensions = struct.unpack('>II', png[16:24])
+    dimensions = png_dimensions(png)
     require(dimensions[0] >= 1000 and dimensions[1] >= 600, 'Product capture is too small')
     files = [path for path in site.rglob('*') if path.is_file()]
     total_bytes = sum(path.stat().st_size for path in files)

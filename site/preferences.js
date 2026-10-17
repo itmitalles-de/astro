@@ -7,6 +7,7 @@
   };
   const resolveTheme = (saved, systemDark) =>
     saved === 'light' || saved === 'dark' ? saved : (systemDark ? 'dark' : 'light');
+  const resolveVariant = value => ['orbit', 'zoomies', 'hyperraum'].includes(value) ? value : 'orbit';
   const read = key => {
     try { return globalThis.localStorage?.getItem(`astro-site.${key}`) || null; }
     catch { return null; }
@@ -15,9 +16,10 @@
     try { globalThis.localStorage?.setItem(`astro-site.${key}`, value); }
     catch { /* The page remains usable when storage is disabled. */ }
   };
-  globalThis.AstroPreferences = { resolveLanguage, resolveTheme, read, save };
+  globalThis.AstroPreferences = { resolveLanguage, resolveTheme, resolveVariant, read, save };
   if (typeof document !== 'undefined') {
-    document.documentElement.lang = resolveLanguage(navigator.languages, read('language'));
+    // Keep the static content's language until the app applies its translation.
     document.documentElement.dataset.theme = resolveTheme(read('theme'), matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.asciiVariant = resolveVariant(new URLSearchParams(location.search).get('variant'));
   }
 })();

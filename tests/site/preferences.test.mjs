@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
 
 const preferences = new URL('../../site/preferences.js', import.meta.url);
 
@@ -25,4 +27,25 @@ test('theme follows the system and accepts only the explicit light/dark override
   assert.equal(resolveTheme('light', true), 'light');
   assert.equal(resolveTheme('dark', false), 'dark');
   assert.equal(resolveTheme('invalid', true), 'dark');
+});
+
+test('early bootstrap keeps the actual fallback language while applying theme and every variant', async () => {
+  const source = await readFile(preferences, 'utf8');
+  for (const variant of ['orbit', 'zoomies', 'hyperraum']) for (const blocked of [false, true]) {
+    const context = {
+      document: { documentElement: { lang: 'en', dataset: {} } },
+      navigator: { languages: ['de-DE'] }, location: { search: `?variant=${variant}` },
+      matchMedia: () => ({ matches: true }), URLSearchParams,
+    };
+    Object.defineProperty(context, 'localStorage', blocked
+      ? { get() { throw new Error('Storage unavailable'); } }
+      : { value: { getItem: key => key === 'astro-site.language' ? 'de' : 'light', setItem() {} } });
+    vm.runInNewContext(source, context);
+    assert.equal(context.document.documentElement.lang, 'en', 'English fallback is not translated by the bootstrap');
+    assert.equal(context.document.documentElement.dataset.theme, blocked ? 'dark' : 'light');
+    assert.equal(context.document.documentElement.dataset.asciiVariant, variant);
+    const prefs = context.AstroPreferences;
+    assert.equal(prefs.resolveLanguage(context.navigator.languages, prefs.read('language')), 'de');
+    assert.doesNotThrow(() => prefs.save('language', 'en'));
+  }
 });
