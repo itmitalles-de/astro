@@ -74,21 +74,22 @@ source ~/.config/kitty/astro_prompt.bash
 
 **Pane controls in every title bar**
 
-| Control | Action |
-| --- | --- |
-| `+→` / `+↓` | Open a terminal to the right / below in the current directory |
-| `▦` | Cycle the pane's group: none → 1 → 2 → 3 → 4 → none (colored) |
-| `\|↔\|` | Give every pane of this group the same width |
-| `⇕` | Give every pane of this group the same height |
-| copy | Copy the selection |
-| `>_` | Copy the last shell command with its output |
-| keyboard | Show kitty's keyboard shortcuts in a separate tab |
-| zoom | Zoom the pane (stack layout) and back |
-| `✕` | Close the pane (asks when a job is running) |
+| Control | Shortcut | Action |
+| --- | --- | --- |
+| `+→` / `+↓` | `Ctrl+Alt+R` / `Ctrl+Alt+D` (`+Shift`: column / row) | Open a terminal to the right / below in the current directory |
+| `▦` | `Ctrl+Alt+P` | Cycle the pane's group: none → 1 → 2 → 3 → 4 → none (colored) |
+| `\|↔\|` | `Ctrl+Alt+=` | Give every pane of this group the same width |
+| `⇕` | `Ctrl+Alt+Shift+=` | Give every pane of this group the same height |
+| copy | `Ctrl+Shift+C` | Copy the selection |
+| `>_` | `Ctrl+Alt+O` | Copy the last shell command with its output |
+| keyboard | `Ctrl+Alt+/` | Show kitty's keyboard shortcuts in a separate tab |
+| zoom | `Ctrl+Shift+Z` | Zoom the pane (stack layout) and back |
+| `✕` | `Ctrl+Shift+W` | Close the pane (asks when a job is running) |
 
 Ordinary `+→` and `+↓` clicks split the clicked pane right or below. Shift-clicking
-adds a full-height column at the tab's right edge or a full-width row at its
-bottom, respectively, scaling the existing layout while preserving its proportions.
+(or `Ctrl+Alt+Shift+R` / `Ctrl+Alt+Shift+D`) adds a full-height column at the tab's
+right edge or a full-width row at its bottom, respectively, scaling the existing
+layout while preserving its proportions.
 New terminals inherit the clicked pane's working directory. Only the "Codex below"
 launcher button is removed; running Codex panes and their title badges remain unchanged.
 
@@ -96,8 +97,8 @@ launcher button is removed; running Codex panes and their title badges remain un
 refresh cached pane controls. When upgrading from the previous default binding,
 press it twice: the first reload installs the new binding; the second refreshes
 the title bars. Existing panes and running jobs remain open.
-Reload also releases cached pointer backends, including the earlier Xlib backend,
-so native-pointer fixes take effect without restarting the terminal.
+Reload also releases cached pointer backends so native-pointer fixes take effect
+without restarting the terminal.
 
 - **Groups:** equalizing changes only the panes of the clicked pane's group;
   every other pane keeps its size. On an ungrouped pane the buttons equalize
@@ -146,8 +147,10 @@ so native-pointer fixes take effect without restarting the terminal.
   Ctrl+Shift+V keeps kitty's native clipboard behavior.
 
 Screenshots stay in `${XDG_CACHE_HOME:-~/.cache}/astro/clipboard` with private
-permissions. They are not automatically deleted, so earlier pasted paths keep
-working; delete old screenshots there manually when no longer needed. The
+permissions. When saving a new screenshot, Astro retains up to 50 recent
+`screenshot-*.png` files from the last 7 days and prunes older or excess
+regular screenshot files automatically so earlier pasted paths in active
+sessions keep working without unbounded disk growth. The
 clipboard itself is never replaced. PNG extraction requires `wl-paste`
 (`wl-clipboard`) in a Wayland desktop, or `xclip` in a pure X11 session.
 PNG reads are limited to 64 MiB while streaming, with a five-second deadline;
@@ -253,7 +256,8 @@ and `ASTRO_BASHRC` to staging paths.
 
 Open **Astro** from the application launcher, or run `astro`. At each app
 start, the launcher copies the literal `/resume` (without a newline) into the
-clipboard and primary selection. Opening another pane or tab does not overwrite
+clipboard and primary selection (set `ASTRO_SEED_CLIPBOARD=off` to disable).
+Opening another pane or tab does not overwrite
 the clipboard again. Kitty informational options, including help, version and
 debugging output, its `@` / `+` command modes, and unsupported `-c`/`-o`
 short-option cluster prefixes (which trigger a native parser crash in Kitty

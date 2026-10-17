@@ -18,22 +18,19 @@ def handle_result(args, answer, target_window_id, boss):
     if os.environ.get('ASTRO_QA_ISOLATED') != '1':
         raise RuntimeError('This probe is only for the private smoke-test instance')
     window=boss.window_id_map[target_window_id]
-    if '--seed-legacy-pointer' in args:
-        import ctypes
+    if '--seed-pointer' in args:
         from types import SimpleNamespace
         state=getattr(boss,'_kitty_pane_buttons_state_v1')
         previous=state.pop('pointer',None)
         if callable(getattr(previous,'close',None)):previous.close()
-        lib=ctypes.CDLL('libX11.so.6')
-        lib.XOpenDisplay.argtypes=[ctypes.c_char_p];lib.XOpenDisplay.restype=ctypes.c_void_p
-        legacy=SimpleNamespace(_lib=lib,_display=lib.XOpenDisplay(None),query=lambda xid: None)
-        assert legacy._display
-        boss._astro_qa_legacy_pointer=state['pointer']=legacy
-        return json.dumps({'legacy_connection_created':True})
-    if '--verify-legacy-release' in args:
-        legacy=boss._astro_qa_legacy_pointer
+        seeded=SimpleNamespace(closed=False,query=lambda xid: None)
+        seeded.close=lambda: setattr(seeded,'closed',True)
+        boss._astro_qa_seeded_pointer=state['pointer']=seeded
+        return json.dumps({'pointer_seeded':True})
+    if '--verify-pointer-release' in args:
+        seeded=boss._astro_qa_seeded_pointer
         state=getattr(boss,'_kitty_pane_buttons_state_v1')
-        return json.dumps({'legacy_connection_released':legacy._display is None and state.get('pointer') is not legacy})
+        return json.dumps({'pointer_released':seeded.closed and state.get('pointer') is not seeded})
     if '--probe-pointer' in args:
         module=runpy.run_path(str(Path(os.environ['KITTY_CONFIG_DIRECTORY'])/'window_title_bar.py'))
         pointer=module['_X11Pointer']()

@@ -66,12 +66,12 @@ def main():
                 remote('launch','--location=hsplit',f'--next-to=id:{first}','--cwd=current')
                 remote('launch','--location=hsplit',f'--next-to=id:{second}','--cwd=current')
                 wait_for(lambda:len(windows())==4 and all(w['at_prompt'] for w in windows()))
-                seeded=json.loads(remote('kitten',str(inspector),'--seed-legacy-pointer'))
-                assert seeded['legacy_connection_created']
+                seeded=json.loads(remote('kitten',str(inspector),'--seed-pointer'))
+                assert seeded['pointer_seeded']
                 remote('action','load_config_file',str(config/'kitty.conf'))
                 remote('kitten',str(config/'reload_pane_controls.py'))
-                released=json.loads(remote('kitten',str(inspector),'--verify-legacy-release'))
-                assert released['legacy_connection_released']
+                released=json.loads(remote('kitten',str(inspector),'--verify-pointer-release'))
+                assert released['pointer_released']
                 def inspect():return json.loads(remote('kitten','--match',f'id:{first}',str(inspector)))
                 baseline=inspect();assert 'codex_below' not in baseline['buttons']
                 original_pids={w['id']:w['pid'] for w in baseline['windows']}

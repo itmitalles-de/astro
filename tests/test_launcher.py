@@ -215,6 +215,23 @@ class LauncherTests(unittest.TestCase):
         desktop = (ROOT/'assets/astro.desktop').read_text()
         self.assertIn('\nExec=astro\n', desktop)
 
+    def test_seed_clipboard_can_be_disabled_via_environment(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            timeout = shutil.which('timeout'); assert timeout is not None
+            (folder/'timeout').symlink_to(timeout)
+            copy = folder/'clipboard-copy'
+            copy.write_text('#!/usr/bin/python3\nimport os,sys\nfrom pathlib import Path\nPath(os.environ["TEST_DIR"]).joinpath("copied").write_bytes(sys.stdin.buffer.read())\n')
+            copy.chmod(0o755)
+            kitty = folder/'kitty'
+            kitty.write_text('#!/usr/bin/python3\nimport json,os,sys\nfrom pathlib import Path\nPath(os.environ["TEST_DIR"]).joinpath("args").write_text(json.dumps(sys.argv[1:]))\n')
+            kitty.chmod(0o755)
+            for value in ('off', '0', 'false', 'no', 'OFF'):
+                result = subprocess.run(['/bin/sh', str(ROOT/'bin/astro')], env=dict(os.environ, PATH=str(folder), WAYLAND_DISPLAY='private-test', TEST_DIR=tmp, ASTRO_SEED_CLIPBOARD=value), capture_output=True, timeout=3)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse((folder/'copied').exists(), f'ASTRO_SEED_CLIPBOARD={value} must skip clipboard seeding')
+                self.assertEqual(json.loads((folder/'args').read_text()), ['--class=astro', '--name=astro', '--title=Astro'])
+
 
 if __name__ == '__main__':
     unittest.main()

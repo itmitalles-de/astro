@@ -62,6 +62,39 @@ class ClipboardTests(unittest.TestCase):
             module.handle_result([], '', 42, boss)
         self.assertEqual(window.paste_with_actions.call_args.args, ('plain text\n',))
 
+    def test_screenshot_cache_prunes_stale_and_excess_files_while_keeping_recent_ones(self):
+        import time
+        spec = importlib.util.spec_from_file_location('astro_clipboard', ROOT / 'config/astro_clipboard.py')
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        png = b'\x89PNG\r\n\x1a\n' + b'test clipboard image'
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / 'astro' / 'clipboard'
+            cache_dir.mkdir(parents=True, mode=0o700)
+            now = time.time()
+            stale = cache_dir / 'screenshot-stale.png'
+            stale.write_bytes(png)
+            os.utime(stale, (now - 8 * 86400, now - 8 * 86400))
+            for i in range(52):
+                item = cache_dir / f'screenshot-{i:03d}.png'
+                item.write_bytes(png)
+                os.utime(item, (now - 3600 + i, now - 3600 + i))
+            unrelated = cache_dir / 'notes.txt'
+            unrelated.write_text('keep')
+            with patch.dict(os.environ, XDG_CACHE_HOME=tmp, WAYLAND_DISPLAY='wayland-0'), patch.object(
+                module, 'read_bounded', side_effect=[b'image/png\n', png]
+            ):
+                saved = Path(module.clipboard_image())
+            self.assertTrue(saved.exists())
+            self.assertFalse(stale.exists(), 'screenshots older than 7 days must be pruned')
+            remaining = sorted(p.name for p in cache_dir.glob('screenshot-*.png'))
+            self.assertEqual(len(remaining), module.MAX_SAVED_IMAGES)
+            self.assertNotIn('screenshot-000.png', remaining)
+            self.assertNotIn('screenshot-001.png', remaining)
+            self.assertIn('screenshot-051.png', remaining)
+            self.assertTrue(unrelated.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

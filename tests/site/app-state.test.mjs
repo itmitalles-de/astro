@@ -70,7 +70,6 @@ async function appFixture(t, { locales = ['en-US'], saved = {}, blockedStorage =
   } };
   install('document', { value: doc });
   install('navigator', { value: { languages: locales, clipboard } });
-  install('location', { value: { search: '?variant=zoomies' } });
   install('matchMedia', { value: () => ({ matches: true, addEventListener() {} }) });
   install('getSelection', { value: () => selection });
   install('setTimeout', { value: callback => { const id = ++timerId; timers.set(id, callback); return id; } });
@@ -180,7 +179,6 @@ for (const blockedStorage of [false, true]) {
     assert.equal(f.doc.documentElement.lang, 'en');
     assert.equal(f.hero.textContent, messages.en.hero1);
     assert.equal(f.doc.documentElement.dataset.theme, 'dark');
-    assert.equal(f.doc.documentElement.dataset.asciiVariant, 'zoomies');
   });
 }
 

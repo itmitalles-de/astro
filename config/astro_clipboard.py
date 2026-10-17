@@ -12,6 +12,38 @@ import time
 from kittens.tui.handler import result_handler
 
 MAX_IMAGE_BYTES = 64 * 1024 * 1024
+MAX_SAVED_IMAGES = 50
+MAX_IMAGE_AGE_SECONDS = 7 * 86400
+
+
+def _prune_clipboard_cache(cache: Path, keep: Path | None = None) -> None:
+    """Keep up to MAX_SAVED_IMAGES recent regular screenshot files for 7 days."""
+    import stat
+
+    cutoff_ns = (time.time() - MAX_IMAGE_AGE_SECONDS) * 1_000_000_000
+    entries: list[tuple[int, str, Path]] = []
+    try:
+        with os.scandir(cache) as it:
+            for entry in it:
+                if not (entry.name.startswith('screenshot-') and entry.name.endswith('.png')):
+                    continue
+                try:
+                    st = entry.stat(follow_symlinks=False)
+                except OSError:
+                    continue
+                if stat.S_ISREG(st.st_mode):
+                    entries.append((st.st_mtime_ns, entry.name, Path(entry.path)))
+    except OSError:
+        return
+    entries.sort(reverse=True)
+    for index, (mtime_ns, _, path) in enumerate(entries):
+        if keep is not None and path == keep:
+            continue
+        if index >= MAX_SAVED_IMAGES or mtime_ns < cutoff_ns:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 def read_bounded(command: list[str], limit: int, timeout: float) -> bytes:
@@ -72,7 +104,9 @@ def clipboard_image() -> str:
             saved = Path(image.name)
             image.write(data)
         # Closing/flushing the file must succeed before handing its path to a CLI.
-        return str(saved.resolve())
+        resolved = str(saved.resolve())
+        _prune_clipboard_cache(cache, keep=saved)
+        return resolved
     except (OSError, ValueError, subprocess.SubprocessError):
         if saved is not None:
             try:

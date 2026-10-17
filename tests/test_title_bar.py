@@ -105,6 +105,33 @@ class SplitControlsTests(unittest.TestCase):
                     f'launch --cwd=current --location={location} --next-to=id:2 --source-window=id:2',
                     window_for_dispatch=window,dispatch_type='MouseEvent',raise_error=True)
 
+    def test_keyboard_kitten_entrypoint_dispatches_pane_actions_and_reports_errors(self):
+        from unittest.mock import Mock
+        window=SimpleNamespace(id=2)
+        boss=SimpleNamespace(**{bar._STATE_ATTR:{'groups':{}}},window_id_map={2:window},show_error=Mock())
+        self.assertTrue(getattr(bar.handle_result,'no_ui',False))
+        with patch.object(bar,'_activate') as activate:
+            bar.handle_result(['window_title_bar.py','full_right'],None,2,boss)
+            bar.handle_result(['window_title_bar.py','full_below'],None,2,boss)
+            bar.handle_result(['window_title_bar.py','group'],None,2,boss)
+            bar.handle_result(['window_title_bar.py','equal_width'],None,2,boss)
+            bar.handle_result(['window_title_bar.py','equal_height'],None,2,boss)
+            bar.handle_result(['window_title_bar.py','copy_command'],None,2,boss)
+            bar.handle_result(['window_title_bar.py','shortcuts'],None,2,boss)
+        self.assertEqual(activate.call_args_list,[
+            unittest.mock.call(boss,window,'add_right',bar.fdt.GLFW_MOD_SHIFT),
+            unittest.mock.call(boss,window,'add_below',bar.fdt.GLFW_MOD_SHIFT),
+            unittest.mock.call(boss,window,'group'),
+            unittest.mock.call(boss,window,'equal_width'),
+            unittest.mock.call(boss,window,'equal_height'),
+            unittest.mock.call(boss,window,'copy_command'),
+            unittest.mock.call(boss,window,'shortcuts'),
+        ])
+        with patch.object(bar,'_activate',side_effect=RuntimeError('equalize failed')),patch.object(bar,'_report_failure') as report:
+            bar.handle_result(['window_title_bar.py','equal_width'],None,2,boss)
+        report.assert_called_once()
+        boss.show_error.assert_called_once_with('Astro pane controls','equalize failed')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,7 +7,6 @@ export async function checkAsciiScene({send,evaluate,until,check,navigate,click,
   await send('Page.bringToFront');
   await evaluate('document.querySelector("#ascii-art").scrollIntoView({block:"center",behavior:"instant"})');
   await until('document.querySelector("#ascii-scene").dataset.motion==="running" && Number(document.querySelector("#ascii-canvas").dataset.frame)>40');
-  const variant = await evaluate('document.documentElement.dataset.asciiVariant');
   const first = await frames();await pause(220);
   check('ASCII renders changing real frames while visible',await frames()>first);
   await evaluate('globalThis.__asciiPixels=document.querySelector("#ascii-canvas").toDataURL()');await pause(180);
@@ -107,11 +106,10 @@ export async function checkAsciiScene({send,evaluate,until,check,navigate,click,
   try{
     await navigate();await pause(120);
     check('Canvas failure leaves the static ASCII fallback and functional page intact',await evaluate('!document.querySelector("#ascii-scene").dataset.ready&&getComputedStyle(document.querySelector(".ascii-fallback")).display!=="none"&&document.querySelector("#ascii-controls").hidden&&document.querySelectorAll("[data-pane]").length===3'));
-    if(variant==='hyperraum')check('The immersive hero fallback stays out of the desktop text column',await evaluate('(()=>{const f=document.querySelector("#ascii-scene").getBoundingClientRect(),p=document.querySelector(".ascii-fallback").getBoundingClientRect();return p.left>=f.left+f.width*.52})()'));
     await click('#split-right');
     check('Optional artwork failure does not break the interactive pane diagram',await evaluate('document.querySelectorAll("[data-pane]").length===4'));
   } finally { await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:injection.identifier}); }
   await navigate();await until('document.querySelector("#ascii-scene")?.dataset.ready==="true"');
   await evaluate('scrollTo({top:0,behavior:"instant"})');
-  return {variant,eye,performance};
+  return {eye,performance};
 }

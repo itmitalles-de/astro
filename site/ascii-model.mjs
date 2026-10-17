@@ -82,11 +82,6 @@ export function animationState({reduced,paused,visible,inView}) {
   if (!visible) return 'hidden';
   return inView ? 'running' : 'offscreen';
 }
-// Only Orbit has room for a full-field particle assembly. Constrained actors
-// keep the head coherent while their corridor, body, legs and trails animate.
-export function headIntroProgress(variant,progress) {
-  return variant==='orbit' ? clamp(progress) : 1;
-}
 export function projectCatPoint(point, {width,height,time=0,pointerX=0,pointerY=0,scatter=0,intro=1}) {
   pointerX = clamp(pointerX,-1,1); pointerY = clamp(pointerY,-1,1);
   const yaw = Math.sin(time*.24)*.14+pointerX*.095;

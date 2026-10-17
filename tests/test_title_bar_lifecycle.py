@@ -40,17 +40,21 @@ class TitleBarLifecycleTests(unittest.TestCase):
             pointer.close.assert_called_once_with()
             self.assertIsNone(state.get('pointer'))
 
-    def test_reload_closes_legacy_xlib_pointer_without_a_close_method(self):
-        first=renderer('astro_legacy_first');second=renderer('astro_legacy_second')
-        boss=SimpleNamespace(handle_window_title_bar_mouse=lambda *args: None,set_active_window=lambda *args: None,combine=lambda *args: None)
-        with patch.object(first.fdt,'add_timer',return_value=101),patch.object(first.fdt,'remove_timer'):
-            state=first._ensure_installed(boss)
-            pointer=SimpleNamespace(_lib=SimpleNamespace(XCloseDisplay=Mock()),_display=12345)
-            state['pointer']=pointer
-            second._ensure_installed(boss)
-            pointer._lib.XCloseDisplay.assert_called_once_with(12345)
-            self.assertIsNone(pointer._display)
-            self.assertIsNone(state.get('pointer'))
+    def test_unavailable_pointer_switches_timer_to_agent_scan_interval(self):
+        module=renderer('astro_adaptive_timer')
+        window=SimpleNamespace(id=1)
+        tab=SimpleNamespace(windows=SimpleNamespace(iter_all_layoutable_groups=lambda **kw:[]))
+        boss=SimpleNamespace(handle_window_title_bar_mouse=lambda *args: None,set_active_window=lambda *args: None,
+                             combine=lambda *args: None,os_window_map={1:SimpleNamespace(active_tab=tab)})
+        with patch.object(module.fdt,'add_timer',side_effect=[101,202]) as add,patch.object(module.fdt,'remove_timer') as remove,patch.object(module.fdt,'current_focused_os_window_id',return_value=1),patch.object(module,'_X11Pointer',side_effect=RuntimeError('no display')),patch.object(module,'_report_failure'):
+            state=module._ensure_installed(boss)
+            self.assertEqual(state['timer'],101)
+            with self.assertRaises(module._NoPointer):
+                module._pointer_target(boss,state)
+            self.assertIs(state['pointer'],False)
+            self.assertEqual(state['timer'],202)
+            remove.assert_called_once_with(101)
+            self.assertEqual(add.call_args_list[1].args,(module._poll_hover,module._AGENT_CACHE_SECONDS,True))
 
     def test_watcher_renderer_and_reload_keep_one_timer_and_native_handler(self):
         first=renderer('astro_lifecycle_first');second=renderer('astro_lifecycle_second')

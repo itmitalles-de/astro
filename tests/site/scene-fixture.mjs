@@ -21,7 +21,7 @@ class Element {
   getBoundingClientRect() { return { width: 1160, height: 610, top: 0, left: 0 }; }
 }
 
-export async function sceneFixture(variant, { reduced = false, initiallyPaused = false } = {}) {
+export async function sceneFixture({ reduced = false, initiallyPaused = false } = {}) {
   let now = 0, sequence = 0, font = '', fontWrites = 0;
   const queued = new Map(), fonts = new Set(), media = new Map(), nodes = new Map(), saved = [];
   const field = new Element(), canvas = new Element(), element = new Element();
@@ -37,7 +37,7 @@ export async function sceneFixture(variant, { reduced = false, initiallyPaused =
   }
   element.querySelector = selector => selector === 'canvas' ? canvas : nodes.get(selector);
   const document = new Element();
-  document.documentElement = { dataset: { asciiVariant: variant } };
+  document.documentElement = { dataset: {} };
   document.fonts = { ready: Promise.resolve() };document.hidden = false;
   globalThis.document = document;globalThis.window = new Element();globalThis.devicePixelRatio = 1;
   Object.defineProperty(globalThis, 'performance', { configurable: true, value: { now: () => now } });

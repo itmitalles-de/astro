@@ -118,11 +118,6 @@ def _install(boss: Any) -> dict[str, Any]:
     state.setdefault("expanded", set())
     state.setdefault("cells", {})
     state.setdefault("hover", None)
-    # Restore native rendering when reloading the earlier pixel-offset version.
-    original_update = state.pop("original_update_title_bar", None)
-    if original_update is not None:
-        from kitty.window import Window
-        Window.update_title_bar = original_update
     # runpy loads the watcher and renderer separately, and reloads the renderer.
     # Always reuse the saved native handler; never wrap an earlier wrapper.
     current = boss.handle_window_title_bar_mouse
@@ -138,13 +133,6 @@ def _install(boss: Any) -> dict[str, Any]:
             close = getattr(pointer, "close", None)
             if callable(close):
                 close()
-            elif getattr(pointer, "_display", None):
-                # The earlier implementation owned a private XOpenDisplay connection.
-                import ctypes
-                pointer._lib.XCloseDisplay.argtypes = [ctypes.c_void_p]
-                pointer._lib.XCloseDisplay.restype = ctypes.c_int
-                pointer._lib.XCloseDisplay(pointer._display)
-                pointer._display = None
         except Exception as error:
             _report_failure(error)
         finally:
@@ -185,7 +173,10 @@ def _color_sgr(color: str | None, bold: bool = False) -> str:
     return f"\x1b[{weight};38;2;{color}m" if color else f"\x1b[{weight};39m"
 
 
-def _agent_title(window: Any, title: str, state: dict[str, Any]) -> tuple[str | None, str]:
+_UNSET = object()
+
+
+def _agent_title(window: Any, title: str, state: dict[str, Any], _detected: Any = _UNSET) -> tuple[str | None, str]:
     """Return the agent CLI running in the pane and its cleaned-up title."""
     import os
     import time
@@ -195,7 +186,7 @@ def _agent_title(window: Any, title: str, state: dict[str, Any]) -> tuple[str | 
     cached = cache.get(window.id)
     if cached is not None and cached[1] == title and now - cached[0] < _AGENT_CACHE_SECONDS:
         return cached[2], cached[3]
-    agent = _detect_agent(window)
+    agent = _detect_agent(window) if _detected is _UNSET else _detected
     agy_title = _agy_session_title(window) if agent == "agy" else None
     shown = agy_title or title
     if agent is not None:
@@ -226,6 +217,22 @@ def _detect_agent(window: Any) -> str | None:
     return name if name in _AGENTS else None
 
 
+def _read_agy_annotation(path: str) -> tuple[tuple[int, int, int], str | None] | None:
+    import json
+    import os
+    import stat
+
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_CLOEXEC | os.O_NOFOLLOW)
+    with os.fdopen(fd, encoding="utf-8", errors="replace") as f:
+        st = os.fstat(f.fileno())
+        if not stat.S_ISREG(st.st_mode):
+            return None
+        annotation = f.read(16384)
+    match = re.search(r'^\s*title\s*:\s*("(?:[^"\\]|\\.)*")', annotation, re.M)
+    title = _BAD_TITLE_CHARS.sub("", json.loads(match[1])).strip() or None if match else None
+    return (st.st_ino, st.st_mtime_ns, st.st_size), title
+
+
 def _agy_session_title(window: Any) -> str | None:
     """Read only the title annotation for this process's held session lock.
 
@@ -233,12 +240,20 @@ def _agy_session_title(window: Any) -> str | None:
     The open presence lock identifies the pane's session even when several
     agy processes share a working directory. Never guess from recent files.
     """
-    import json
     import os
     import stat
 
     try:
         pgrp = os.tcgetpgrp(window.child.child_fd)
+        cached = getattr(window, "_astro_agy_cache", None)
+        if cached is not None and cached[0] == pgrp:
+            try:
+                if os.readlink(cached[1]) == cached[2]:
+                    st = os.lstat(cached[3])
+                    if stat.S_ISREG(st.st_mode) and (st.st_ino, st.st_mtime_ns, st.st_size) == cached[4]:
+                        return cached[5]
+            except OSError:
+                pass
         with os.scandir(f"/proc/{pgrp}/fd") as descriptors:
             for entry in descriptors:
                 try:
@@ -255,14 +270,16 @@ def _agy_session_title(window: Any) -> str | None:
                         or os.path.basename(root) != "antigravity-cli"):
                     continue
                 path = os.path.join(root, "annotations", session + ".pbtxt")
-                fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_CLOEXEC | os.O_NOFOLLOW)
-                with os.fdopen(fd, encoding="utf-8", errors="replace") as f:
-                    if not stat.S_ISREG(os.fstat(f.fileno()).st_mode):
-                        continue
-                    annotation = f.read(16384)
-                match = re.search(r'^\s*title\s*:\s*("(?:[^"\\]|\\.)*")', annotation, re.M)
-                if match:
-                    return _BAD_TITLE_CHARS.sub("", json.loads(match[1])).strip() or None
+                parsed = _read_agy_annotation(path)
+                if parsed is None:
+                    continue
+                stat_key, title = parsed
+                if title is not None:
+                    try:
+                        window._astro_agy_cache = (pgrp, entry.path, lock, path, stat_key, title)
+                    except AttributeError:
+                        pass
+                    return title
     except (OSError, ValueError, TypeError, AttributeError):
         pass  # Missing or changing annotations must never break pane controls.
     return None
@@ -292,7 +309,7 @@ def _scan_agents(boss: Any, state: dict[str, Any]) -> set[int]:
                 elif agent == "agy":
                     # /rename changes the annotation, not the terminal title.
                     del cache[window.id]
-                    if _agent_title(window, cached[1], state)[1] != cached[3]:
+                    if _agent_title(window, cached[1], state, _detected=agent)[1] != cached[3]:
                         changed.add(window.id)
     return changed
 
@@ -475,6 +492,9 @@ def _pointer_target(boss: Any, state: dict[str, Any]) -> tuple[int, str | None] 
         # No X11 pointer: no hints, but agents still scan and nothing folds.
         _report_failure(error)
         state["pointer"] = False
+        if state.get("timer") is not None:
+            _stop_hover_timer(boss)
+            state["timer"] = fdt.add_timer(_poll_hover, _AGENT_CACHE_SECONDS, True)
         raise _NoPointer from error
     size = fdt.get_os_window_size(os_window_id)
     if position is None or not size or not size["width"]:
@@ -949,3 +969,29 @@ def _handle_title_bar_mouse(
         return
     # All ordinary title interactions retain kitty's native focus/drag/rename.
     original(os_window_id, window_id, x, y, button, modifiers, action)
+
+
+def main(args: list[str]) -> None:
+    return None
+
+
+from kittens.tui.handler import result_handler  # noqa: E402
+
+
+@result_handler(no_ui=True)
+def handle_result(args: list[str], answer: Any, target_window_id: int, boss: Any) -> None:
+    if getattr(boss, _STATE_ATTR, None) is None:
+        _ensure_installed(boss)
+    window = boss.window_id_map.get(target_window_id) or getattr(boss, "active_window", None)
+    if window is None or len(args) < 2:
+        return
+    action = args[1]
+    try:
+        if action in ("full_right", "full_below"):
+            _activate(boss, window, "add_right" if action == "full_right" else "add_below", fdt.GLFW_MOD_SHIFT)
+        elif action in ("add_right", "add_below", "group", "equal_width", "equal_height",
+                        "copy", "copy_command", "shortcuts", "zoom", "close", "expand", "collapse"):
+            _activate(boss, window, action)
+    except Exception as error:
+        _report_failure(error)
+        boss.show_error("Astro pane controls", str(error))

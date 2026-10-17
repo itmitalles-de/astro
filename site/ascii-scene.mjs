@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { animationState, createCatPoints, glyphFor, headIntroProgress, projectCatPoint, randomAt, scatterEnvelope } from './ascii-model.mjs';
+import { animationState, createCatPoints, glyphFor, projectCatPoint, randomAt, scatterEnvelope } from './ascii-model.mjs';
 
 const TAU = Math.PI*2;
 const colors = {
@@ -9,9 +9,6 @@ const colors = {
 const ease = value => 1-Math.pow(1-Math.min(1,Math.max(0,value)),3);
 
 export async function createAsciiScene({element,translate,initiallyPaused=false,savePaused=()=>{}}) {
-  const variant = document.documentElement.dataset.asciiVariant || 'orbit';
-  const artist = variant==='zoomies' ? (await import('./ascii-zoomies.mjs')).drawZoomies
-    : variant==='hyperraum' ? (await import('./ascii-hyperraum.mjs')).drawHyperraum : null;
   const field = element.querySelector('#ascii-scene');
   const canvas = element.querySelector('canvas');
   const context = canvas.getContext('2d',{alpha:false});
@@ -21,7 +18,6 @@ export async function createAsciiScene({element,translate,initiallyPaused=false,
   const scatterButton = element.querySelector('#ascii-scatter');
   const caption = element.querySelector('.ascii-caption > [data-i18n]');
   const preference = matchMedia('(prefers-reduced-motion: reduce)');
-  const stackedLayout = matchMedia('(max-width:760px)');
   let reduced = preference.matches, paused = initiallyPaused, inView = false, suspended = false;
   let width = 0, height = 0, dpr = 1, points = [], columns = 0;
   let clock = reduced || paused ? 3 : 0, flow = 0, burstStart = -100, frame = 0;
@@ -35,10 +31,8 @@ export async function createAsciiScene({element,translate,initiallyPaused=false,
     pauseButton.textContent = translate(pauseButton.dataset.i18n);
     pauseButton.setAttribute('aria-pressed',String(paused));
     pauseButton.disabled = reduced;
-    const titleKey = variant==='zoomies' ? 'asciiZoomies' : variant==='hyperraum' ? 'asciiHyperraum' : 'asciiOrbit';
-    const actionKey = variant==='zoomies' ? 'asciiZoomiesAction' : variant==='hyperraum' ? 'asciiHyperraumAction' : 'asciiScatter';
-    caption.dataset.i18n = titleKey;caption.textContent = translate(titleKey);
-    scatterButton.dataset.i18n = actionKey;scatterButton.textContent = translate(actionKey);
+    caption.dataset.i18n = 'asciiOrbit';caption.textContent = translate('asciiOrbit');
+    scatterButton.dataset.i18n = 'asciiScatter';scatterButton.textContent = translate('asciiScatter');
     scatterButton.disabled = reduced || paused;
   }
   function glyph(char,x,y,size,color,alpha=1) {
@@ -132,25 +126,11 @@ export async function createAsciiScene({element,translate,initiallyPaused=false,
     context.fillRect(0,0,width,height);
     context.textAlign = 'center';context.textBaseline = 'middle';
     const intro = still?1:ease(clock/1.8);
-    if (artist) {
-      artist(context,{width,height,time,energy,pointerX,pointerY,intro,still,flow:still?0:flow,stacked:stackedLayout.matches},{
-        glyph,
-        cat: ({x=width*.5,y=height*.5,scale=1,scatter=energy}={}) => {
-          if (!(scale>0)) throw new RangeError('ASCII cat scale must be positive; never mirror Astro');
-          context.save();
-          context.translate(x-width*.5*scale,y-height*.5*scale);
-          context.scale(scale,scale);
-          drawCat(time,scatter,headIntroProgress(variant,intro));
-          context.restore();
-        },
-      });
-    } else {
-      drawStars(time+flow,energy);
-      drawOrbits(time+flow,energy,false);
-      drawCat(time,energy,intro);
-      drawOrbits(time+flow,energy,true);
-      drawPulse(clock-burstStart,energy);
-    }
+    drawStars(time+flow,energy);
+    drawOrbits(time+flow,energy,false);
+    drawCat(time,energy,intro);
+    drawOrbits(time+flow,energy,true);
+    drawPulse(clock-burstStart,energy);
     context.globalAlpha = 1;
     canvas.dataset.frame = String(++frame);
     canvas.dataset.frameMs = (performance.now()-began).toFixed(2);

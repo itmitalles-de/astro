@@ -19,7 +19,7 @@ python3 -m unittest discover -s tests -p test_site_validator.py -v
 node --test tests/site/*.test.mjs
 ```
 
-The artifact checker verifies local assets and imports (including dynamic imports and `.js` modules), anchors, PNG chunk framing/checksums, image dimensions, domain metadata, the exact self-hosted CSP, and a 2 MiB site-size budget. It rejects entries escaping the artifact and special files before reading their content. Structural PNG checks do not replace actual browser decoding. Node's built-in test runner covers both languages, locale/theme/variant defaults, immutable normal/full-span layout operations with a six-pane diagram limit, canonical ASCII cat geometry and positive-scale responsive artist poses. The full `python3 tools/check.py` suite also compares all ordinary diagram insertion sequences up to six panes with the installed Kitty layout, rather than assuming an abstract split always matches native insertion. No package install is needed for the Node checks.
+The artifact checker verifies local assets and imports (including dynamic imports and `.js` modules), anchors, PNG chunk framing/checksums, image dimensions, domain metadata, the exact self-hosted CSP, and a 2 MiB site-size budget. It rejects entries escaping the artifact and special files before reading their content. Structural PNG checks do not replace actual browser decoding. Node's built-in test runner covers both languages, locale/theme defaults, immutable normal/full-span layout operations with a six-pane diagram limit, and canonical ASCII cat geometry. The full `python3 tools/check.py` suite also compares all ordinary diagram insertion sequences up to six panes with the installed Kitty layout, rather than assuming an abstract split always matches native insertion. No package install is needed for the Node checks.
 
 For browser QA, use Node 22+ and a **dedicated** headless Chromium/Brave profile, never a user's normal browser debugging endpoint. Pass that instance's CDP origin to:
 
@@ -31,7 +31,7 @@ node tools/check_site_browser.mjs \
   --axe /absolute/path/to/axe.min.js
 ```
 
-The CDP port above is an example; allocate an unused port for the dedicated browser. The optional axe-core script is a QA-only dependency and is not shipped. The tool tests both themes/languages at 320, 390, 768, 1024 and 1440 CSS pixels, layout actions, keyboard input, persistence, unavailable storage, reduced motion, installation-copy success/denial, resource requests and readable no-JavaScript content. It also exercises real ASCII frame/pixel changes, keyboard pause, saved pause, a complete burst, offscreen/hidden suspension, reduced-motion stills, canvas failure and software frame timings. Run it once for each `?variant=orbit`, `?variant=zoomies` and `?variant=hyperraum` URL. Drawing-call observation preserves the native Canvas implementation; timing samples are taken after the observation wrapper is removed. Copy tests use an isolated browser clipboard stub and **do not** verify or replace the desktop clipboard. Automated accessibility checks do not establish full WCAG conformance or replace manual screen-reader and real-device testing. Reports and actual browser screenshots are written into the requested output directory.
+The CDP port above is an example; allocate an unused port for the dedicated browser. The optional axe-core script is a QA-only dependency and is not shipped. The tool tests both themes/languages at 320, 390, 768, 1024 and 1440 CSS pixels, layout actions, keyboard input, persistence, unavailable storage, reduced motion, installation-copy success/denial, resource requests and readable no-JavaScript content. It also exercises real ASCII frame/pixel changes, keyboard pause, saved pause, a complete burst, offscreen/hidden suspension, reduced-motion stills, canvas failure and software frame timings. Drawing-call observation preserves the native Canvas implementation; timing samples are taken after the observation wrapper is removed. Copy tests use an isolated browser clipboard stub and **do not** verify or replace the desktop clipboard. Automated accessibility checks do not establish full WCAG conformance or replace manual screen-reader and real-device testing. Reports and actual browser screenshots are written into the requested output directory.
 
 ## Product capture and licenses
 
@@ -51,27 +51,21 @@ The logo files are unchanged copies of `assets/astro.svg` and `assets/astro-128.
 ## Preferences and progressive enhancement
 
 - `astro-site.language`: valid `en`/`de` choices override the first browser locale. Otherwise German locales select German; all others select English.
-- `astro-site.theme`: `light`/`dark` override the OS; `system` follows live OS changes. Early bootstrap applies the theme and variant; the application resolves language once while replacing English fallback content, so fallback text is never prematurely tagged German. A missing/partial bootstrap still honors valid saved choices.
+- `astro-site.theme`: `light`/`dark` override the OS; `system` follows live OS changes. Early bootstrap applies the theme; the application resolves language once while replacing English fallback content, so fallback text is never prematurely tagged German. A missing/partial bootstrap still honors valid saved choices.
 - `astro-site.motion`: an explicit `paused` choice freezes the artwork on future loads; `auto` permits motion only while the system preference and visibility allow it.
 - Storage access is guarded; language/theme still work for the current page if persistence is blocked.
 - Without JavaScript the English content, product evidence, installation commands, native FAQ and static ASCII fallback remain readable. Language/theme controls, copy, live artwork and the layout diagram require JavaScript. Canvas failure leaves the same fallback and does not block the functional site.
 - The web theme does not recolor the actual terminal screenshot or the terminal-colored ASCII artwork. Reduced motion disables smooth scrolling and composes a still, with no recurring artwork frame work; pointer input and the disabled burst cannot override it. There are no autoplay videos or section entrance effects.
 
-## ASCII variants
+## ASCII hero scene
 
-The URL parameter `variant` accepts only `orbit`, `zoomies` or `hyperraum` (default: `orbit`). It is applied before CSS for stable hero composition; it does not persist a design choice or change the canonical site URL. All variants retain the real terminal capture and product content:
+The hero features **Orbit**, a wide canonical ASCII portrait with perspective orbital streams and an interactive star burst, alongside the real terminal capture and product content.
 
-- **Orbit:** a wide canonical ASCII portrait with perspective orbital streams and an interactive star burst.
-- **Zoomies:** a split hero and a front-facing running/jumping ASCII cat, articulated legs/tail, paw marks and momentum trails. Direction changes never mirror the head.
-- **Hyperraum:** an immersive native-dark hero, copy-safe left column, right-hand portrait, layered ASCII corridor and hyperspace rush. Mobile stacks copy above a centered scene.
-
-`ascii-model.mjs` samples the canonical silhouette and facial geometry from the source SVG. Only the shared head painter renders green, on the viewer-right eye. `ascii-scene.mjs` owns the single frame loop, local font use, DPR cap (1.5), responsive density, 24/18 fps ceilings, user pause, one-shot burst, lifecycle and visibility. It rearms a resolution query when DPR changes, redraws backing pixels without resuming paused motion, and starts at the inclusive 10% intersection threshold. Glyph font sizes are quantized to quarter pixels to bound font-cache churn without changing the artwork. The alternate artists are stateless ASCII drawing functions: they never schedule work or attach input handlers. Zoomies keeps its head/body connected even during the complete rush and direction-change cycle. Touch scrolling is not intercepted. The 18ms p95 QA budget measures software drawing on the test machine, not performance on physical phones.
+`ascii-model.mjs` samples the canonical silhouette and facial geometry from the source SVG. Only the head painter renders green, on the viewer-right eye. `ascii-scene.mjs` owns the single frame loop, local font use, DPR cap (1.5), responsive density, 24/18 fps ceilings, user pause, one-shot burst, lifecycle and visibility. It rearms a resolution query when DPR changes, redraws backing pixels without resuming paused motion, and starts at the inclusive 10% intersection threshold. Glyph font sizes are quantized to quarter pixels to bound font-cache churn without changing the artwork. Touch scrolling is not intercepted. The 18ms p95 QA budget measures software drawing on the test machine, not performance on physical phones.
 
 The browser density check changes DPR without changing the CSS box. Chromium's CDP override updates resolution values without immediately dispatching media-query changes, so the harness requests native media reevaluation before checking the canvas; it does not inject DOM resize/change events. This is emulation, not a physical multi-monitor check.
 
-The full-field particle assembly belongs to Orbit only. Zoomies and Hyperraum keep their heads coherent from the first frame while the body/trails or corridor animate; this preserves whole-head framing and Hyperraum's copy-safe region during the early intro, not just at rest. Hyperraum's opaque copy backing matches the terminal background and makes text contrast independently verifiable. Its no-canvas fallback uses the same right-hand safe region on desktop.
-
-The three variants are alternatives for owner review; their presence in a local branch is not a publication or a design selection. Reviews, videos, browser profiles and decisions stay outside `site/`.
+Reviews, videos, browser profiles and decisions stay outside `site/`.
 
 ## Publication
 

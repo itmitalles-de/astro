@@ -54,6 +54,10 @@ class AgyTitleTests(unittest.TestCase):
                 self.assertIsNone(bar._agy_session_title(window))
                 annotation.write_bytes(b'raw: "\xff"\ntitle: "MONTU\\n\\u001b"\n')
                 self.assertEqual(bar._agy_session_title(window), 'MONTU')
+                with patch('os.scandir', side_effect=AssertionError('unchanged lock and annotation must use fast path')):
+                    self.assertEqual(bar._agy_session_title(window), 'MONTU')
+                annotation.write_text('title: "HERMES"\n')
+                self.assertEqual(bar._agy_session_title(window), 'HERMES')
                 annotation.unlink()
                 os.mkfifo(annotation)
                 self.assertIsNone(bar._agy_session_title(window))
