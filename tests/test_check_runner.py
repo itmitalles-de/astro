@@ -37,6 +37,12 @@ class CheckRunnerTests(unittest.TestCase):
             with patch.object(check,'ROOT',root):
                 check.check_whitespace()
 
+    def test_ci_installs_the_cairo_foreign_type_bridge(self):
+        workflow=(PATH.parents[1]/'.github/workflows/checks.yml').read_text()
+        packages=workflow.partition('sudo apt-get install')[2].partition('      - name:')[0].split()
+        self.assertIn('python3-gi-cairo',packages,
+                      'PyGObject needs the Cairo foreign-type bridge as well as pycairo to render SVGs')
+
 
 if __name__=='__main__':
     unittest.main()

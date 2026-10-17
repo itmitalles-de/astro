@@ -25,7 +25,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             shellcheck xvfb libxtst6 libx11-xcb1 libxcb1 libxkbcommon-x11-0 \
             libxcursor1 libxinerama1 libxrandr2 libgl1 libegl1 libfontconfig1 \
-            python3-gi python3-cairo python3-fonttools gir1.2-rsvg-2.0
+            python3-gi python3-cairo python3-gi-cairo python3-fonttools gir1.2-rsvg-2.0
       - name: Install the supported Kitty release with a pinned checksum
         env:
           KITTY_SHA256: d573618b911e9c461bd421b96c13c74c7f1cb2f1ac9c327818d4ff84366cf5c6
