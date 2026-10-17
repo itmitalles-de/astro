@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Astro is a Kitty-based terminal workspace for Claude Code, Codex and Hermes. Practical pane controls, familiar colors and a one-eyed cat.">
+  <meta name="theme-color" content="#191919">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Astro — quiet company, sharp tools">
+  <meta property="og:description" content="Your terminal. In good company. A Kitty workspace for your shells and agent CLIs.">
+  <meta property="og:url" content="https://astro.wutz.io/">
+  <meta property="og:image" content="https://astro.wutz.io/assets/workspace.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://astro.wutz.io/">
+  <link rel="icon" href="assets/astro.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/chivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script src="preferences.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.mjs"></script>
+  <title>Astro — quiet company, sharp tools</title>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="header wrap">
+    <a class="brand" href="#top" aria-label="Astro home" data-aria="home"><img src="assets/astro-128.png" width="42" height="42" alt=""><span>Astro<span class="brand-dot" aria-hidden="true">.</span></span></a>
+    <nav aria-label="Main navigation" data-aria="navigation"><a href="#features" data-i18n="navFeatures">What it does</a><a href="#install" data-i18n="navInstall">Install</a><a href="https://github.com/itmitalles-de/astro">GitHub</a></nav>
+    <div class="preferences">
+      <button id="language-toggle" class="language" type="button" aria-label="DE: Auf Deutsch umschalten" lang="de">DE</button>
+      <label class="theme-control"><span class="sr-only" data-i18n="appearance">Appearance</span><select id="theme" aria-label="Appearance" data-aria="appearance"><option value="system" data-i18n="themeSystem">System</option><option value="dark" data-i18n="themeDark">Dark</option><option value="light" data-i18n="themeLight">Light</option></select></label>
+    </div>
+  </header>
+  <main id="main">
+    <section class="hero wrap" id="top" aria-labelledby="hero-title">
+      <div class="hero-heading"><h1 id="hero-title"><span data-i18n="hero1">Your terminal.</span><span data-i18n="hero2">In good company.</span></h1><div class="hero-copy"><p data-i18n="intro">A calmer home for your shells, projects and AI agents. Built on Kitty, with thoughtful pane controls and a one-eyed cat called Astro.</p><div class="hero-actions"><a class="button primary" href="#install" data-i18n="installAction">Install Astro</a><a class="source-link" href="https://github.com/itmitalles-de/astro" data-i18n="sourceAction">Explore the source <span aria-hidden="true">↗</span></a></div></div></div>
+      <div class="product-meta"><span><span class="status-dot" aria-hidden="true"></span><span data-i18n="productType">A real terminal. Your own tools.</span></span><span class="product-platform">Linux <span aria-hidden="true">/</span> Kitty 0.49.2 <span aria-hidden="true">/</span> GPLv3+</span></div>
+      <figure class="product"><a href="assets/workspace.png" aria-label="Open the full-size Astro screenshot" data-aria="fullImage"><img src="assets/workspace.png" width="1440" height="760" fetchpriority="high" alt="Actual Astro terminal with three panes, native title-bar controls and the purple, grey and gold Bash prompt. Example workspace content." data-alt="workspaceAlt"></a><figcaption><span data-i18n="captureCaption">Captured in Astro. A simplified example workspace, not a mockup. See Install for the default session.</span><span class="signature">quiet company. sharp tools.</span></figcaption></figure>
+    </section>
+
+    <section class="features wrap" id="features" aria-labelledby="features-title">
+      <div class="section-heading"><p class="section-kicker" data-i18n="builtFor">For the way you work</p><h2 id="features-title" data-i18n="featuresTitle">Less window wrangling.<br>More room to think.</h2><p class="section-description" data-i18n="featuresDescription">A familiar terminal, with the little things already considered. Keep your shell. Keep your tools. Give them a better place to work.</p></div>
+      <div class="layout-feature">
+        <div class="feature-copy"><h3 data-i18n="splitTitle">A split where you mean it.</h3><p data-i18n="splitBody">Split the pane you're using. Hold Shift to add a full-height column or full-width row instead. The rest of your layout keeps its proportions, and the new shell inherits the clicked pane's directory.</p><p class="try-note" data-i18n="tryNote">Try the layout diagram: select a pane, then add one. Use the switch for the Shift behavior on touchscreens.</p><p class="diagram-disclaimer" data-i18n="diagramNote">An interactive explanation, not a terminal emulator. No commands run here.</p></div>
+        <div class="playground" id="playground">
+          <div class="playground-toolbar"><span class="playground-title" data-i18n="layoutLabel">Your layout</span><button class="reset" id="reset-layout" type="button" data-i18n="reset">Reset</button></div>
+          <div id="layout-diagram" class="layout-diagram" role="group" aria-label="Interactive pane layout diagram" data-aria="diagramLabel"></div>
+          <div class="split-controls"><button id="split-right" type="button"><span aria-hidden="true">+ →</span><span data-i18n="splitRight">Right</span></button><button id="split-below" type="button"><span aria-hidden="true">+ ↓</span><span data-i18n="splitBelow">Below</span></button><label class="whole-label"><input id="whole-span" type="checkbox"><span data-i18n="wholeSpan">Whole row / column</span></label></div>
+          <p class="diagram-status" id="diagram-status" role="status" aria-live="polite"></p>
+          <noscript><p data-i18n="diagramNoScript">Enable JavaScript to try the diagram. Astro itself is a native terminal application.</p></noscript>
+        </div>
+      </div>
+      <div class="feature-pair">
+        <article><div class="feature-glyph" aria-hidden="true">›_</div><h3 data-i18n="agentsTitle">Your agents. Not a walled garden.</h3><p data-i18n="agentsBody">Astro recognizes panes running Claude Code, Codex or Hermes and gives each one a clear title badge. Run them alongside ordinary shells, logs and monitors. Their tools and subscriptions stay yours.</p><p class="feature-footnote" data-i18n="agentsNote">Agent CLIs are installed separately. Astro isn't an agent service.</p></article>
+        <article><div class="feature-glyph clipboard-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" focusable="false"><rect x="8" y="8" width="12" height="13" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 4H4v13" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><h3 data-i18n="clipboardTitle">From screenshot to conversation.</h3><p data-i18n="clipboardBody">Right-click a copied PNG to paste its private file path into the clicked pane. Copy command output from the title bar, or middle-click to paste the primary selection. Less switching, less hunting for context.</p><p class="feature-footnote" data-i18n="clipboardNote">Image paths remain on your machine. Your CLI decides what to do with them.</p></article>
+      </div>
+      <div class="small-details"><span data-i18n="detail1">Pane groups &amp; equal sizing</span><span data-i18n="detail2">Bash shell integration</span><span data-i18n="detail3">Quiet GNOME Soft colors</span><span data-i18n="detail4">A small cat greeting</span></div>
+    </section>
+
+    <section class="install-section" id="install" aria-labelledby="install-title"><div class="wrap install-grid">
+      <div class="install-copy"><p class="section-kicker" data-i18n="makeRoom">Make room for Astro</p><h2 id="install-title" data-i18n="installTitle">Keep Kitty.<br>Bring the cat.</h2><p data-i18n="installBody">Astro is a configuration and title-bar extension for unmodified Kitty, not a terminal fork. Install it to your user account, then open Astro from your application launcher.</p><p class="requirements" data-i18n="requirements">Install Kitty separately. Requires Git, Bash and Python 3.10+. Tested with Kitty 0.49.2 on Linux.</p><p class="requirements" data-i18n="clipboardRequirements">PNG pasting needs wl-clipboard on Wayland or xclip on X11; without it, right-click falls back to text.</p><p class="requirements" data-i18n="launchPath">For the astro command and application-menu entry, include ~/.local/bin in your PATH. The full-path start command works without it.</p><a class="inline-link" href="https://github.com/itmitalles-de/astro#requirements" data-i18n="requirementsLink">Read the requirements</a></div>
+      <div class="install-code"><div class="code-top"><span data-i18n="sourceInstall">Install from source</span><button id="copy-install" type="button" data-i18n="copy">Copy commands</button></div><pre id="install-commands" role="region" tabindex="0" aria-label="Installation commands" data-aria="installCommands"><code>git clone https://github.com/itmitalles-de/astro.git
+cd astro
+./install.sh
+"$HOME/.local/bin/astro"</code></pre><p class="session-start" data-i18n="defaultSession">The included default session opens three Claude Code, three Hermes and three Codex panes, plus htop and a shell. Missing tools leave normal shells. Before the first start, edit ~/.config/kitty/sessions/default.conf if you want a different workspace.</p><a class="session-source" href="https://github.com/itmitalles-de/astro/blob/main/config/sessions/default.conf" data-i18n="sessionSource">View the default session</a><div class="code-note"><span aria-hidden="true">$</span><span data-i18n="noSudo">Your user account. No sudo required.</span></div><p id="copy-status" class="copy-feedback" role="status" aria-live="polite"></p></div>
+      <aside class="install-notice"><strong data-i18n="beforeInstallTitle">Before you install</strong><p data-i18n="beforeInstall">The installer replaces Astro-owned Kitty configuration files and backs them up first. Your existing personal session layout is kept on upgrades, and running panes aren't closed. Read the configuration if you already have a customized Kitty setup.</p><a href="https://github.com/itmitalles-de/astro#install" data-i18n="installDocs">Installation &amp; backup details</a></aside>
+    </div></section>
+
+    <section class="faq wrap" aria-labelledby="faq-title"><div><p class="section-kicker" data-i18n="detailsKicker">A few useful details</p><h2 id="faq-title" data-i18n="faqTitle">Still your terminal.</h2><p class="faq-intro" data-i18n="faqIntro">No new shell to learn. No account to create for Astro. Just a small open-source layer on a terminal we already like.</p></div><div class="faq-list">
+      <details><summary data-i18n="faq1q">Does it work on a Wayland desktop?</summary><p data-i18n="faq1a">Yes, with Kitty running through XWayland, as configured by Astro. Native Wayland without XWayland hasn't been verified yet. This is separate from the desktop session itself being Wayland.</p><a href="https://github.com/itmitalles-de/astro/issues/1" data-i18n="waylandIssue">Follow native Wayland testing</a></details>
+      <details><summary data-i18n="faq2q">What about my existing configuration?</summary><p data-i18n="faq2a">Replaced files go into a private timestamped backup next to the Kitty configuration. The installer preserves your session layout on upgrades. You can inspect every setting and use only the parts you want; check the README before installing.</p></details>
+      <details><summary data-i18n="faq3q">What does Astro change about the clipboard?</summary><p data-i18n="faq3a">At app startup, the launcher puts /resume into both clipboard selections. New panes don't repeat that. Programs inside Astro may read the normal clipboard without asking, including remote programs over SSH. Only run trusted software when your clipboard holds sensitive data. PNG files are saved privately and aren't automatically deleted.</p></details>
+      <details><summary data-i18n="faq4q">Can I turn the greeting or prompt off?</summary><p data-i18n="faq4a">Yes. Set ASTRO_ANIMATION=off to disable the greeting or ASTRO_PROMPT=off to keep your own prompt. REDUCE_MOTION=1 also disables the greeting. The underlying shell and Kitty remain yours.</p></details>
+    </div></section>
+    <section class="closing wrap"><img src="assets/astro-128.png" width="72" height="72" alt=""><div><h2 data-i18n="closingTitle">A little company for your next project.</h2><p data-i18n="closingBody">Meet Astro. One eye, plenty of character, and a place for all your terminals.</p></div><a class="button primary" href="#install" data-i18n="closingAction">Bring Astro home</a></section>
+  </main>
+  <footer class="footer wrap"><a class="brand footer-brand" href="#top" data-aria="top" aria-label="Astro — back to top">Astro<span class="brand-dot" aria-hidden="true">.</span></a><p><span data-i18n="madeBy">An open-source project by</span> <a href="https://itmitalles.de">itmitalles.de</a>.</p><div class="footer-links"><a href="https://github.com/itmitalles-de/astro">GitHub</a><a href="https://github.com/itmitalles-de/astro/blob/main/LICENSE">GPLv3+</a><a href="https://wutz.io">wutz.io</a><a href="assets/fonts/README.txt" data-i18n="fonts">Fonts</a><a href="https://itmitalles.de/impressum.html" data-i18n="imprint">Imprint</a><a href="https://itmitalles.de/datenschutz.html" data-i18n="privacy">Privacy</a></div></footer>
+
+</body>
+</html>

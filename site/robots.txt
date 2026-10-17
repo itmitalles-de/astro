@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://astro.wutz.io/sitemap.xml
