@@ -90,6 +90,8 @@ Ordinary `+→` and `+↓` clicks split the clicked pane right or below. Shift-c
 (or `Ctrl+Alt+Shift+R` / `Ctrl+Alt+Shift+D`) adds a full-height column at the tab's
 right edge or a full-width row at its bottom, respectively, scaling the existing
 layout while preserving its proportions.
+Move between terminals with `Alt+arrow keys` (or `Alt+Shift+arrow keys`), jump to
+one with `Alt+1` … `Alt+9`, or pick one by label with `Ctrl+Shift+Space`.
 New terminals inherit the clicked pane's working directory. Only the "Codex below"
 launcher button is removed; running Codex panes and their title badges remain unchanged.
 
